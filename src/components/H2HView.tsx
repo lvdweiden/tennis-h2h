@@ -156,7 +156,7 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
               { key: 'doubles', label: `Dubbel (${doublesCount})` },
             ].map(f => (
               <button key={f.key} onClick={() => setFilter(f.key as FilterType)}
-                className={`btn btn-sm flex-1 ${filter === f.key ? 'btn-primary' : 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'}`}>
+                className={`btn btn-sm flex-1 ${filter === f.key ? 'bg-blue-600 text-white border-blue-600 hover:bg-blue-700' : 'bg-gray-200 text-gray-700 border-gray-300 hover:bg-gray-300'}`}>
                 {f.label}
               </button>
             ))}
