@@ -61,12 +61,21 @@ function StatsView({ players, matches }: { players: Player[], matches: Match[] }
   const [sortKey, setSortKey] = useState<SortKey>('wins')
   const stats = players.map(p => {
     const myMatches = matches.filter(m => [m.player1_id, m.player2_id, m.team1_player2_id, m.team2_player2_id].includes(p.id))
+    let setsWon = 0, setsLost = 0, gamesWon = 0, gamesLost = 0
     const wins = myMatches.filter(m => {
-      const p1inTeam1 = m.player1_id === p.id || m.team1_player2_id === p.id
+      const inTeam1 = m.player1_id === p.id || m.team1_player2_id === p.id
       const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
-      return p1inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
+      const sets: number[][] = (() => { try { return JSON.parse(m.sets) } catch { return [] } })()
+      sets.forEach(([t1, t2]) => {
+        const myGames = inTeam1 ? t1 : t2
+        const oppGames = inTeam1 ? t2 : t1
+        gamesWon += myGames
+        gamesLost += oppGames
+        if (myGames > oppGames) setsWon++; else setsLost++
+      })
+      return inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
     }).length
-    return { player: p, wins, losses: myMatches.length - wins, total: myMatches.length, pct: myMatches.length ? Math.round(wins / myMatches.length * 100) : 0 }
+    return { player: p, wins, losses: myMatches.length - wins, total: myMatches.length, pct: myMatches.length ? Math.round(wins / myMatches.length * 100) : 0, setsWon, setsLost, gamesWon, gamesLost }
   }).sort((a, b) => {
     if (sortKey === 'name') return a.player.name.localeCompare(b.player.name)
     if (sortKey === 'wins') return b.wins - a.wins
@@ -84,16 +93,22 @@ function StatsView({ players, matches }: { players: Player[], matches: Match[] }
       <div className="space-y-2">
         {stats.map((s, i) => (
           <div key={s.player.id} className="card bg-base-100 shadow-sm">
-            <div className="card-body py-3 px-4 flex-row items-center gap-4">
-              <div className="text-2xl font-black text-gray-200 w-8">#{i + 1}</div>
-              <div className="flex-1">
-                <div className="font-semibold">{s.player.name}</div>
-                <div className="text-xs text-gray-400">{s.total} wedstrijden</div>
+            <div className="card-body py-3 px-4">
+              <div className="flex items-center gap-4">
+                <div className="text-2xl font-black text-gray-200 w-8">#{i + 1}</div>
+                <div className="flex-1">
+                  <div className="font-semibold">{s.player.name}</div>
+                  <div className="text-xs text-gray-400">{s.total} wedstrijden</div>
+                </div>
+                <div className="flex gap-3 text-center">
+                  <div><div className="text-lg font-bold text-green-600">{s.wins}</div><div className="text-xs text-gray-400">W</div></div>
+                  <div><div className="text-lg font-bold text-red-400">{s.losses}</div><div className="text-xs text-gray-400">V</div></div>
+                  <div><div className="text-lg font-bold text-blue-500">{s.pct}%</div><div className="text-xs text-gray-400">Win%</div></div>
+                </div>
               </div>
-              <div className="flex gap-3 text-center">
-                <div><div className="text-lg font-bold text-green-600">{s.wins}</div><div className="text-xs text-gray-400">W</div></div>
-                <div><div className="text-lg font-bold text-red-400">{s.losses}</div><div className="text-xs text-gray-400">V</div></div>
-                <div><div className="text-lg font-bold text-blue-500">{s.pct}%</div><div className="text-xs text-gray-400">Win</div></div>
+              <div className="flex gap-4 mt-2 pt-2 border-t border-base-200 text-xs text-gray-500">
+                <span>🎯 Sets: <span className="font-semibold text-green-600">{s.setsWon}</span>–<span className="font-semibold text-red-400">{s.setsLost}</span></span>
+                <span>🎾 Games: <span className="font-semibold text-green-600">{s.gamesWon}</span>–<span className="font-semibold text-red-400">{s.gamesLost}</span></span>
               </div>
             </div>
           </div>
