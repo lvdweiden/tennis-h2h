@@ -35,8 +35,10 @@ function MatrixView({ players, matches }: { players: Player[], matches: Match[] 
                     return <td key={p2.id} className="bg-base-200 border border-base-300 text-center">—</td>
                   }
                   const h2h = matches.filter(m => {
-                    const ids = [m.player1_id, m.player2_id, m.team1_player2_id, m.team2_player2_id]
-                    return ids.includes(p1.id) && ids.includes(p2.id)
+                    const team1 = [m.player1_id, m.team1_player2_id]
+                    const team2 = [m.player2_id, m.team2_player2_id]
+                    return (team1.includes(p1.id) && team2.includes(p2.id)) ||
+                           (team2.includes(p1.id) && team1.includes(p2.id))
                   })
                   const w = h2h.filter(m => {
                     const p1inTeam1 = m.player1_id === p1.id || m.team1_player2_id === p1.id
