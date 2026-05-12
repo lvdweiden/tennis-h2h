@@ -57,6 +57,21 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
   }).length
   const p2wins = filteredMatches.length - p1wins
 
+  // Sets & games berekening
+  let p1Sets = 0, p2Sets = 0, p1Games = 0, p2Games = 0
+  filteredMatches.forEach(m => {
+    const p1inTeam1 = m.player1_id === selectedP1 || m.team1_player2_id === selectedP1
+    const parsed = parseSets(m.sets)
+    parsed.forEach(([t1, t2]) => {
+      const myGames = p1inTeam1 ? t1 : t2
+      const oppGames = p1inTeam1 ? t2 : t1
+      p1Games += myGames
+      p2Games += oppGames
+      if (myGames > oppGames) p1Sets++
+      else if (oppGames > myGames) p2Sets++
+    })
+  })
+
   const singlesCount = relevantMatches.filter(m => m.match_type === 'singles').length
   const doublesCount = relevantMatches.filter(m => m.match_type === 'doubles').length
 
@@ -116,6 +131,8 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
                 <div className="text-center flex-1">
                   <div className="text-4xl font-black">{p1wins}</div>
                   <div className="text-lg font-semibold mt-1">{p1?.name}</div>
+                  <div className="text-xs opacity-70 mt-2">🎯 Sets: {p1Sets}</div>
+                  <div className="text-xs opacity-70">🎾 Games: {p1Games}</div>
                 </div>
                 <div className="text-center px-4">
                   <div className="text-2xl font-bold opacity-60">VS</div>
@@ -124,6 +141,8 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
                 <div className="text-center flex-1">
                   <div className="text-4xl font-black">{p2wins}</div>
                   <div className="text-lg font-semibold mt-1">{p2?.name}</div>
+                  <div className="text-xs opacity-70 mt-2">🎯 Sets: {p2Sets}</div>
+                  <div className="text-xs opacity-70">🎾 Games: {p2Games}</div>
                 </div>
               </div>
             </div>
