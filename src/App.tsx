@@ -269,7 +269,7 @@ export default function App() {
             )}
             {tab === 'uitslagen' && (
               <div className="space-y-2">
-                <h2 className="font-bold text-lg mb-3">📋 Alle Uitslagen</h2>
+                <h2 className="font-bold text-lg mb-3 text-gray-900">📋 Alle Uitslagen</h2>
                 {matches.length === 0 && <div className="text-center text-gray-400 py-8">Nog geen wedstrijden</div>}
                 {matches.map(m => {
                   const p1 = players.find(p => p.id === m.player1_id)?.name || '?'
