@@ -5,6 +5,7 @@ import type { Player, Match } from './types'
 import { SURFACE_COLORS } from './types'
 import AddMatchModal from './components/AddMatchModal'
 import H2HView from './components/H2HView'
+import PlayerProfile from './components/PlayerProfile'
 
 const PIN = '2729'
 
@@ -74,7 +75,7 @@ function MatrixView({ players, matches }: { players: Player[], matches: Match[] 
   )
 }
 
-function StatsView({ players, matches }: { players: Player[], matches: Match[] }) {
+function StatsView({ players, matches, onSelectPlayer }: { players: Player[], matches: Match[], onSelectPlayer: (p: Player) => void }) {
   const [sortKey, setSortKey] = useState<SortKey>('wins')
   const stats = players.map(p => {
     const myMatches = matches.filter(m => [m.player1_id, m.player2_id, m.team1_player2_id, m.team2_player2_id].includes(p.id))
@@ -114,7 +115,7 @@ function StatsView({ players, matches }: { players: Player[], matches: Match[] }
               <div className="flex items-center gap-4">
                 <div className="text-2xl font-black text-gray-200 w-8">#{i + 1}</div>
                 <div className="flex-1">
-                  <div className="font-semibold">{s.player.name}</div>
+                  <button onClick={() => onSelectPlayer(s.player)} className="font-semibold hover:text-blue-600 hover:underline text-left transition-colors">{s.player.name}</button>
                   <div className="text-xs text-gray-400">{s.total} wedstrijden</div>
                 </div>
                 <div className="flex gap-3 text-center">
@@ -149,6 +150,7 @@ export default function App() {
   const [showPinModal, setShowPinModal] = useState(false)
   const [pinInput, setPinInput] = useState('')
   const [pinError, setPinError] = useState(false)
+  const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
 
   const loadData = async () => {
     setLoading(true)
@@ -280,15 +282,24 @@ export default function App() {
           <>
             {tab === 'h2h' && <H2HView players={players} matches={matches} onEditMatch={handleEditMatch} onDeleteMatch={handleDeleteMatch} isUnlocked={isUnlocked} />}
             {tab === 'matrix' && (
-              <div>
-                <div className="card bg-base-100 shadow-md mb-4">
-                  <div className="card-body py-4">
-                    <h2 className="font-bold text-lg mb-3">📊 H2H Matrix</h2>
-                    <MatrixView players={players} matches={matches} />
+              selectedPlayer ? (
+                <PlayerProfile
+                  player={selectedPlayer}
+                  players={players}
+                  matches={matches}
+                  onBack={() => setSelectedPlayer(null)}
+                />
+              ) : (
+                <div>
+                  <div className="card bg-base-100 shadow-md mb-4">
+                    <div className="card-body py-4">
+                      <h2 className="font-bold text-lg mb-3">📊 H2H Matrix</h2>
+                      <MatrixView players={players} matches={matches} />
+                    </div>
                   </div>
+                  <StatsView players={players} matches={matches} onSelectPlayer={(p) => setSelectedPlayer(p)} />
                 </div>
-                <StatsView players={players} matches={matches} />
-              </div>
+              )
             )}
             {tab === 'uitslagen' && (
               <div className="space-y-2">
