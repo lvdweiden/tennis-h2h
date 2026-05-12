@@ -266,27 +266,27 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
               },
             ]
             return (
-              <div className="card bg-base-100 shadow-md mb-4 overflow-hidden">
-                <div className="bg-gray-800 text-white py-2 px-4 flex items-center justify-between">
+              <div className="rounded-xl shadow-md mb-4 overflow-hidden border border-gray-200" style={{background:'#fff'}}>
+                <div className="py-2 px-4 flex items-center justify-between" style={{background:'#1e3a5f'}}>
                   <span className="font-bold text-sm text-blue-300">{p1?.name}</span>
-                  <span className="text-xs text-gray-400 tracking-widest">STATISTIEKEN</span>
+                  <span className="text-xs text-gray-300 tracking-widest">STATISTIEKEN</span>
                   <div className="flex items-center gap-2">
                     <span className="font-bold text-sm text-blue-300">{p2?.name}</span>
-                    <button onClick={() => setShowPlayerStats(false)} className="text-gray-400 hover:text-white ml-2 text-lg leading-none">✕</button>
+                    <button onClick={() => setShowPlayerStats(false)} className="text-gray-300 hover:text-white ml-2 text-lg leading-none">✕</button>
                   </div>
                 </div>
-                <table className="w-full text-sm">
+                <table className="w-full text-sm" style={{background:'#fff'}}>
                   <tbody>
                     {rows.map((row, i) => (
                       <tr key={i} className="border-b border-gray-100 last:border-0">
-                        <td className="py-3 px-4 font-bold text-gray-800 text-right w-[38%]">{row.v1}</td>
-                        <td className="py-3 px-2 text-center text-gray-400 text-xs tracking-wide font-medium w-[24%] bg-gray-50">{row.label}</td>
-                        <td className="py-3 px-4 font-bold text-gray-800 text-left w-[38%]">{row.v2}</td>
+                        <td className="py-3 px-4 font-bold text-right w-[38%]" style={{color:'#111'}}>{row.v1}</td>
+                        <td className="py-3 px-2 text-center text-xs tracking-wide font-medium w-[24%]" style={{color:'#666', background:'#f5f5f5'}}>{row.label}</td>
+                        <td className="py-3 px-4 font-bold text-left w-[38%]" style={{color:'#111'}}>{row.v2}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
-                <p className="text-xs text-gray-400 py-2 text-center bg-gray-50">Statistieken over alle wedstrijden in de app</p>
+                <p className="text-xs py-2 text-center" style={{color:'#888', background:'#f5f5f5'}}>Statistieken over alle wedstrijden in de app</p>
               </div>
             )
           })()}
