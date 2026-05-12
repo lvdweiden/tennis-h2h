@@ -133,7 +133,7 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
       last5,
     }
   }
-  const [showPlayerStats, setShowPlayerStats] = useState<'p1' | 'p2' | 'both' | null>(null)
+  const [showPlayerStats, setShowPlayerStats] = useState<boolean>(false)
 
   return (
     <div>
@@ -200,7 +200,7 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
                 <div className="text-center flex-1">
                   <div className="text-4xl font-black">{p1wins}</div>
                   <button
-                    onClick={() => setShowPlayerStats(v => v === 'p1' ? null : 'p1')}
+                    onClick={() => setShowPlayerStats(v => !v)}
                     className="text-lg font-semibold mt-1 underline decoration-dotted underline-offset-2 cursor-pointer hover:opacity-80 bg-transparent border-none text-white"
                   >
                     {p1?.name}{selectedP1Partner && <span className="text-sm opacity-80"> & {players.find(p => p.id === selectedP1Partner)?.name}</span>}
@@ -215,7 +215,7 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
                 <div className="text-center flex-1">
                   <div className="text-4xl font-black">{p2wins}</div>
                   <button
-                    onClick={() => setShowPlayerStats(v => v === 'p2' ? null : 'p2')}
+                    onClick={() => setShowPlayerStats(v => !v)}
                     className="text-lg font-semibold mt-1 underline decoration-dotted underline-offset-2 cursor-pointer hover:opacity-80 bg-transparent border-none text-white"
                   >
                     {p2?.name}{selectedP2Partner && <span className="text-sm opacity-80"> & {players.find(p => p.id === selectedP2Partner)?.name}</span>}
@@ -227,63 +227,66 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
             </div>
           </div>
 
-          {/* Speler statistieken paneel */}
-          {showPlayerStats && (() => {
-            const pid = showPlayerStats === 'p1' ? selectedP1! : selectedP2!
-            const pname = showPlayerStats === 'p1' ? p1?.name : p2?.name
-            const s = getPlayerStats(pid)
-            return (
-              <div className="card bg-base-100 shadow-md mb-4 border-t-4 border-blue-500">
-                <div className="card-body py-4 px-4">
-                  <div className="flex items-center justify-between mb-3">
-                    <h3 className="font-bold text-base text-blue-700">📊 {pname}</h3>
-                    <button onClick={() => setShowPlayerStats(null)} className="btn btn-ghost btn-xs text-gray-400">✕</button>
+          {/* Speler statistieken paneel — beide spelers naast elkaar */}
+          {showPlayerStats && selectedP1 && selectedP2 && (() => {
+            const s1 = getPlayerStats(selectedP1)
+            const s2 = getPlayerStats(selectedP2)
+            const rows = [
+              {
+                label: 'TOTAAL W-V',
+                v1: <>{s1.totalW}-{s1.total - s1.totalW} <span className="text-gray-400 text-xs">({s1.total})</span></>,
+                v2: <>{s2.totalW}-{s2.total - s2.totalW} <span className="text-gray-400 text-xs">({s2.total})</span></>,
+              },
+              {
+                label: 'ENKEL W-V',
+                v1: <>{s1.singlesW}-{s1.singlesTotal - s1.singlesW} <span className="text-gray-400 text-xs">({s1.singlesTotal})</span></>,
+                v2: <>{s2.singlesW}-{s2.singlesTotal - s2.singlesW} <span className="text-gray-400 text-xs">({s2.singlesTotal})</span></>,
+              },
+              {
+                label: 'DUBBEL W-V',
+                v1: <>{s1.doublesW}-{s1.doublesTotal - s1.doublesW} <span className="text-gray-400 text-xs">({s1.doublesTotal})</span></>,
+                v2: <>{s2.doublesW}-{s2.doublesTotal - s2.doublesW} <span className="text-gray-400 text-xs">({s2.doublesTotal})</span></>,
+              },
+              {
+                label: 'VORM',
+                v1: (
+                  <div className="flex gap-1 justify-end">
+                    {s1.last5.map((w, i) => (
+                      <span key={i} className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold ${w ? 'bg-green-500' : 'bg-red-400'}`}>{w ? 'W' : 'V'}</span>
+                    ))}
                   </div>
-                  <table className="w-full text-sm">
-                    <tbody>
-                      <tr className="border-b border-gray-100">
-                        <td className="py-2 font-bold text-gray-800 text-right pr-4 w-1/3">
-                          {s.totalW}-{s.total - s.totalW}
-                          <span className="text-gray-400 font-normal text-xs ml-1">({s.total})</span>
-                        </td>
-                        <td className="py-2 text-center text-gray-400 text-xs tracking-wide font-medium w-1/3">TOTAAL W-V</td>
-                        <td className="py-2 w-1/3"></td>
-                      </tr>
-                      <tr className="border-b border-gray-100">
-                        <td className="py-2 font-bold text-gray-800 text-right pr-4">
-                          {s.singlesW}-{s.singlesTotal - s.singlesW}
-                          <span className="text-gray-400 font-normal text-xs ml-1">({s.singlesTotal})</span>
-                        </td>
-                        <td className="py-2 text-center text-gray-400 text-xs tracking-wide font-medium">ENKEL W-V</td>
-                        <td className="py-2"></td>
-                      </tr>
-                      <tr className="border-b border-gray-100">
-                        <td className="py-2 font-bold text-gray-800 text-right pr-4">
-                          {s.doublesW}-{s.doublesTotal - s.doublesW}
-                          <span className="text-gray-400 font-normal text-xs ml-1">({s.doublesTotal})</span>
-                        </td>
-                        <td className="py-2 text-center text-gray-400 text-xs tracking-wide font-medium">DUBBEL W-V</td>
-                        <td className="py-2"></td>
-                      </tr>
-                      {s.last5.length > 0 && (
-                        <tr>
-                          <td className="py-2 text-right pr-4">
-                            <div className="flex gap-1 justify-end">
-                              {s.last5.map((w, i) => (
-                                <span key={i} className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold ${w ? 'bg-green-500' : 'bg-red-400'}`}>
-                                  {w ? 'W' : 'V'}
-                                </span>
-                              ))}
-                            </div>
-                          </td>
-                          <td className="py-2 text-center text-gray-400 text-xs tracking-wide font-medium">VORM</td>
-                          <td className="py-2"></td>
-                        </tr>
-                      )}
-                    </tbody>
-                  </table>
-                  <p className="text-xs text-gray-400 mt-2 text-center">Statistieken over alle wedstrijden in de app</p>
+                ),
+                v2: (
+                  <div className="flex gap-1 justify-start">
+                    {s2.last5.map((w, i) => (
+                      <span key={i} className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold ${w ? 'bg-green-500' : 'bg-red-400'}`}>{w ? 'W' : 'V'}</span>
+                    ))}
+                  </div>
+                ),
+              },
+            ]
+            return (
+              <div className="card bg-base-100 shadow-md mb-4 overflow-hidden">
+                <div className="bg-gray-800 text-white py-2 px-4 flex items-center justify-between">
+                  <span className="font-bold text-sm text-blue-300">{p1?.name}</span>
+                  <span className="text-xs text-gray-400 tracking-widest">STATISTIEKEN</span>
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-sm text-blue-300">{p2?.name}</span>
+                    <button onClick={() => setShowPlayerStats(false)} className="text-gray-400 hover:text-white ml-2 text-lg leading-none">✕</button>
+                  </div>
                 </div>
+                <table className="w-full text-sm">
+                  <tbody>
+                    {rows.map((row, i) => (
+                      <tr key={i} className="border-b border-gray-100 last:border-0">
+                        <td className="py-3 px-4 font-bold text-gray-800 text-right w-[38%]">{row.v1}</td>
+                        <td className="py-3 px-2 text-center text-gray-400 text-xs tracking-wide font-medium w-[24%] bg-gray-50">{row.label}</td>
+                        <td className="py-3 px-4 font-bold text-gray-800 text-left w-[38%]">{row.v2}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+                <p className="text-xs text-gray-400 py-2 text-center bg-gray-50">Statistieken over alle wedstrijden in de app</p>
               </div>
             )
           })()}
