@@ -88,8 +88,8 @@ function StatsView({ players, matches }: { players: Player[], matches: Match[] }
   return (
     <div>
       <div className="flex gap-2 mb-4 flex-wrap">
-        {([['wins','🏆 Wins'],['losses','❌ Verliezen'],['winpct','% Win'],['name','Naam']] as [SortKey, string][]).map(([k, l]) => (
-          <button key={k} onClick={() => setSortKey(k)} className={`btn btn-xs ${sortKey === k ? 'btn-primary' : 'btn-outline'}`}>{l}</button>
+        {([['wins','🏆 Overwinningen'],['losses','❌ Nederlagen'],['winpct','% Win'],['name','Naam']] as [SortKey, string][]).map(([k, l]) => (
+          <button key={k} onClick={() => setSortKey(k)} className={`btn btn-xs ${sortKey === k ? 'bg-blue-700 text-white border-blue-700' : 'bg-gray-200 text-gray-800 border-gray-300 hover:bg-gray-300'}`}>{l}</button>
         ))}
       </div>
       <div className="space-y-2">
@@ -241,7 +241,7 @@ export default function App() {
           <div className="flex">
             {([['h2h','🎾 H2H'], ['matrix','📊 Matrix'], ['uitslagen','📋 Uitslagen']] as [Tab, string][]).map(([t, l]) => (
               <button key={t} onClick={() => setTab(t)}
-                className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${tab === t ? 'border-green-600 text-green-700' : 'border-transparent text-gray-500 hover:text-gray-700'}`}>
+                className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${tab === t ? 'border-green-600 text-green-700' : 'border-transparent text-gray-600 hover:text-gray-900'}`}>
                 {l}
               </button>
             ))}
