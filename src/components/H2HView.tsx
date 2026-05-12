@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import type { Match, Player } from '../types'
 import { SURFACES, SURFACE_COLORS } from '../types'
 import EditMatchModal from './EditMatchModal'
@@ -135,6 +135,53 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
   }
   const [showPlayerStats, setShowPlayerStats] = useState<boolean>(false)
 
+  // Animatie: tel getallen op van 0 naar doel
+  const [animP1Wins, setAnimP1Wins] = useState(0)
+  const [animP2Wins, setAnimP2Wins] = useState(0)
+  const [animP1Sets, setAnimP1Sets] = useState(0)
+  const [animP2Sets, setAnimP2Sets] = useState(0)
+  const [animP1Games, setAnimP1Games] = useState(0)
+  const [animP2Games, setAnimP2Games] = useState(0)
+  const animRef = useRef<ReturnType<typeof setInterval> | null>(null)
+
+  // Start animatie wanneer scores veranderen
+  useEffect(() => {
+    if (animRef.current) clearInterval(animRef.current)
+    setAnimP1Wins(0)
+    setAnimP2Wins(0)
+    setAnimP1Sets(0)
+    setAnimP2Sets(0)
+    setAnimP1Games(0)
+    setAnimP2Games(0)
+
+    const targets = [p1wins, p2wins, p1Sets, p2Sets, p1Games, p2Games]
+    const max = Math.max(...targets, 1)
+    const steps = Math.min(max, 20)
+    let step = 0
+
+    animRef.current = setInterval(() => {
+      step++
+      const progress = step / steps
+      setAnimP1Wins(Math.round(p1wins * progress))
+      setAnimP2Wins(Math.round(p2wins * progress))
+      setAnimP1Sets(Math.round(p1Sets * progress))
+      setAnimP2Sets(Math.round(p2Sets * progress))
+      setAnimP1Games(Math.round(p1Games * progress))
+      setAnimP2Games(Math.round(p2Games * progress))
+      if (step >= steps) {
+        clearInterval(animRef.current!)
+        setAnimP1Wins(p1wins)
+        setAnimP2Wins(p2wins)
+        setAnimP1Sets(p1Sets)
+        setAnimP2Sets(p2Sets)
+        setAnimP1Games(p1Games)
+        setAnimP2Games(p2Games)
+      }
+    }, 40)
+
+    return () => { if (animRef.current) clearInterval(animRef.current) }
+  }, [p1wins, p2wins, p1Sets, p2Sets, p1Games, p2Games])
+
   return (
     <div>
       {editingMatch && (
@@ -198,30 +245,30 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
             <div className="card-body py-6">
               <div className="flex items-center justify-between">
                 <div className="text-center flex-1">
-                  <div className="text-4xl font-black">{p1wins}</div>
+                  <div className="text-4xl font-black transition-all duration-100">{animP1Wins}</div>
                   <button
                     onClick={() => setShowPlayerStats(v => !v)}
                     className="text-lg font-semibold mt-1 underline decoration-dotted underline-offset-2 cursor-pointer hover:opacity-80 bg-transparent border-none text-white"
                   >
                     {p1?.name}{selectedP1Partner && <span className="text-sm opacity-80"> & {players.find(p => p.id === selectedP1Partner)?.name}</span>}
                   </button>
-                  <div className="text-xs opacity-70 mt-2">🎯 Sets: {p1Sets}</div>
-                  <div className="text-xs opacity-70">🎾 Games: {p1Games}</div>
+                  <div className="text-xs opacity-70 mt-2">🎯 Sets: {animP1Sets}</div>
+                  <div className="text-xs opacity-70">🎾 Games: {animP1Games}</div>
                 </div>
                 <div className="text-center px-4">
                   <div className="text-2xl font-bold opacity-60">VS</div>
                   <div className="text-xs opacity-50 mt-1">{filteredMatches.length} wedstrijden</div>
                 </div>
                 <div className="text-center flex-1">
-                  <div className="text-4xl font-black">{p2wins}</div>
+                  <div className="text-4xl font-black transition-all duration-100">{animP2Wins}</div>
                   <button
                     onClick={() => setShowPlayerStats(v => !v)}
                     className="text-lg font-semibold mt-1 underline decoration-dotted underline-offset-2 cursor-pointer hover:opacity-80 bg-transparent border-none text-white"
                   >
                     {p2?.name}{selectedP2Partner && <span className="text-sm opacity-80"> & {players.find(p => p.id === selectedP2Partner)?.name}</span>}
                   </button>
-                  <div className="text-xs opacity-70 mt-2">🎯 Sets: {p2Sets}</div>
-                  <div className="text-xs opacity-70">🎾 Games: {p2Games}</div>
+                  <div className="text-xs opacity-70 mt-2">🎯 Sets: {animP2Sets}</div>
+                  <div className="text-xs opacity-70">🎾 Games: {animP2Games}</div>
                 </div>
               </div>
             </div>
