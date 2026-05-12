@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import confetti from 'canvas-confetti'
-import { supabase } from './supabase'
-import type { Player, Match } from './types'
+import { supabase, fetchProfiles } from './supabase'
+import type { Player, Match, PlayerProfile as TPlayerProfile } from './types'
 import { SURFACE_COLORS } from './types'
 import AddMatchModal from './components/AddMatchModal'
 import H2HView from './components/H2HView'
@@ -151,15 +151,18 @@ export default function App() {
   const [pinInput, setPinInput] = useState('')
   const [pinError, setPinError] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
+  const [profiles, setProfiles] = useState<TPlayerProfile[]>([])
 
   const loadData = async () => {
     setLoading(true)
-    const [{ data: pData }, { data: mData }] = await Promise.all([
+    const [{ data: pData }, { data: mData }, prData] = await Promise.all([
       supabase.from('tennis_players').select('*').order('name'),
-      supabase.from('tennis_matches').select('*').order('date', { ascending: false })
+      supabase.from('tennis_matches').select('*').order('date', { ascending: false }),
+      fetchProfiles()
     ])
     if (pData) setPlayers(pData)
     if (mData) setMatches(mData)
+    setProfiles(prData)
     setLoading(false)
   }
 
@@ -287,7 +290,15 @@ export default function App() {
                   player={selectedPlayer}
                   players={players}
                   matches={matches}
+                  profile={profiles.find(pr => pr.player_id === selectedPlayer.id) || null}
                   onBack={() => setSelectedPlayer(null)}
+                  onProfileSaved={(saved: TPlayerProfile) => {
+                    setProfiles(prev => {
+                      const idx = prev.findIndex(pr => pr.player_id === saved.player_id)
+                      if (idx >= 0) { const n = [...prev]; n[idx] = saved; return n }
+                      return [...prev, saved]
+                    })
+                  }}
                 />
               ) : (
                 <div>

@@ -21,6 +21,18 @@ export type Surface = 'Kunstgras' | 'Gravel' | 'Smashcourt' | 'Hardcourt binnen'
 
 export const SURFACES: Surface[] = ['Kunstgras', 'Gravel', 'Smashcourt', 'Hardcourt binnen', 'Hardcourt buiten']
 
+export interface PlayerProfile {
+  id?: number
+  player_id: number
+  photo_url?: string | null
+  height?: number | null
+  preferred_hand?: string | null
+  birthdate?: string | null
+  club?: string | null
+  bio?: string | null
+  pincode?: string | null
+}
+
 export const SURFACE_COLORS: Record<string, string> = {
   Kunstgras: 'bg-green-500 text-white',
   Gravel: 'bg-orange-500 text-white',
