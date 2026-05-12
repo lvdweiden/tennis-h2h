@@ -29,9 +29,18 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch }
   const [editingMatch, setEditingMatch] = useState<Match | null>(null)
 
   const relevantMatches = matches.filter(m => {
-    if (!selectedP1 || !selectedP2) return false
-    const ids = [m.player1_id, m.player2_id, m.team1_player2_id, m.team2_player2_id]
-    return ids.includes(selectedP1) && ids.includes(selectedP2) && selectedP1 !== selectedP2
+    if (!selectedP1 || !selectedP2 || selectedP1 === selectedP2) return false
+    if (m.match_type === 'doubles') {
+      // Alleen tellen als ze op VERSCHILLENDE teams staan
+      const p1inTeam1 = m.player1_id === selectedP1 || m.team1_player2_id === selectedP1
+      const p1inTeam2 = m.player2_id === selectedP1 || m.team2_player2_id === selectedP1
+      const p2inTeam1 = m.player1_id === selectedP2 || m.team1_player2_id === selectedP2
+      const p2inTeam2 = m.player2_id === selectedP2 || m.team2_player2_id === selectedP2
+      return (p1inTeam1 && p2inTeam2) || (p1inTeam2 && p2inTeam1)
+    } else {
+      const ids = [m.player1_id, m.player2_id]
+      return ids.includes(selectedP1) && ids.includes(selectedP2)
+    }
   })
 
   const filteredMatches = relevantMatches.filter(m => {
