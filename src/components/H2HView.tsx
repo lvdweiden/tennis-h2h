@@ -250,16 +250,16 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
               {
                 label: 'VORM',
                 v1: (
-                  <div className="flex gap-1 justify-end">
+                  <div className="flex flex-wrap gap-1 justify-end">
                     {s1.last5.map((w, i) => (
-                      <span key={i} className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold ${w ? 'bg-green-500' : 'bg-red-400'}`}>{w ? 'W' : 'V'}</span>
+                      <span key={i} className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white font-bold ${w ? 'bg-green-500' : 'bg-red-400'}`} style={{fontSize:'10px'}}>{w ? 'W' : 'V'}</span>
                     ))}
                   </div>
                 ),
                 v2: (
-                  <div className="flex gap-1 justify-start">
+                  <div className="flex flex-wrap gap-1 justify-start">
                     {s2.last5.map((w, i) => (
-                      <span key={i} className={`inline-flex items-center justify-center w-6 h-6 rounded-full text-white text-xs font-bold ${w ? 'bg-green-500' : 'bg-red-400'}`}>{w ? 'W' : 'V'}</span>
+                      <span key={i} className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white font-bold ${w ? 'bg-green-500' : 'bg-red-400'}`} style={{fontSize:'10px'}}>{w ? 'W' : 'V'}</span>
                     ))}
                   </div>
                 ),
