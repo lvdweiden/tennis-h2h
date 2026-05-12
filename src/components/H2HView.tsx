@@ -108,6 +108,33 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
   const p1 = players.find(p => p.id === selectedP1)
   const p2 = players.find(p => p.id === selectedP2)
 
+  // Speler statistieken over ALLE wedstrijden (niet alleen H2H)
+  function getPlayerStats(playerId: number) {
+    function didWin(m: Match) {
+      const inTeam1 = m.player1_id === playerId || m.team1_player2_id === playerId
+      const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
+      return inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
+    }
+    const all = matches.filter(m => {
+      if (m.match_type === 'doubles') return [m.player1_id, m.team1_player2_id, m.player2_id, m.team2_player2_id].includes(playerId)
+      return m.player1_id === playerId || m.player2_id === playerId
+    })
+    const singles = all.filter(m => m.match_type === 'singles')
+    const doubles = all.filter(m => m.match_type === 'doubles')
+    const sorted = [...all].sort((a, b) => b.date.localeCompare(a.date))
+    const last5 = sorted.slice(0, 5).map(m => didWin(m))
+    return {
+      total: all.length,
+      totalW: all.filter(m => didWin(m)).length,
+      singlesW: singles.filter(m => didWin(m)).length,
+      singlesTotal: singles.length,
+      doublesW: doubles.filter(m => didWin(m)).length,
+      doublesTotal: doubles.length,
+      last5,
+    }
+  }
+  const [showPlayerStats, setShowPlayerStats] = useState<'p1' | 'p2' | 'both' | null>(null)
+
   return (
     <div>
       {editingMatch && (
@@ -172,7 +199,12 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
               <div className="flex items-center justify-between">
                 <div className="text-center flex-1">
                   <div className="text-4xl font-black">{p1wins}</div>
-                  <div className="text-lg font-semibold mt-1">{p1?.name}{selectedP1Partner && <span className="text-sm opacity-80"> & {players.find(p => p.id === selectedP1Partner)?.name}</span>}</div>
+                  <button
+                    onClick={() => setShowPlayerStats(v => v === 'p1' ? null : 'p1')}
+                    className="text-lg font-semibold mt-1 underline decoration-dotted underline-offset-2 cursor-pointer hover:opacity-80 bg-transparent border-none text-white"
+                  >
+                    {p1?.name}{selectedP1Partner && <span className="text-sm opacity-80"> & {players.find(p => p.id === selectedP1Partner)?.name}</span>}
+                  </button>
                   <div className="text-xs opacity-70 mt-2">🎯 Sets: {p1Sets}</div>
                   <div className="text-xs opacity-70">🎾 Games: {p1Games}</div>
                 </div>
@@ -182,13 +214,79 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
                 </div>
                 <div className="text-center flex-1">
                   <div className="text-4xl font-black">{p2wins}</div>
-                  <div className="text-lg font-semibold mt-1">{p2?.name}{selectedP2Partner && <span className="text-sm opacity-80"> & {players.find(p => p.id === selectedP2Partner)?.name}</span>}</div>
+                  <button
+                    onClick={() => setShowPlayerStats(v => v === 'p2' ? null : 'p2')}
+                    className="text-lg font-semibold mt-1 underline decoration-dotted underline-offset-2 cursor-pointer hover:opacity-80 bg-transparent border-none text-white"
+                  >
+                    {p2?.name}{selectedP2Partner && <span className="text-sm opacity-80"> & {players.find(p => p.id === selectedP2Partner)?.name}</span>}
+                  </button>
                   <div className="text-xs opacity-70 mt-2">🎯 Sets: {p2Sets}</div>
                   <div className="text-xs opacity-70">🎾 Games: {p2Games}</div>
                 </div>
               </div>
             </div>
           </div>
+
+          {/* Speler statistieken paneel */}
+          {showPlayerStats && (() => {
+            const pid = showPlayerStats === 'p1' ? selectedP1! : selectedP2!
+            const pname = showPlayerStats === 'p1' ? p1?.name : p2?.name
+            const s = getPlayerStats(pid)
+            return (
+              <div className="card bg-base-100 shadow-md mb-4 border-t-4 border-blue-500">
+                <div className="card-body py-4 px-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <h3 className="font-bold text-base text-blue-700">📊 {pname}</h3>
+                    <button onClick={() => setShowPlayerStats(null)} className="btn btn-ghost btn-xs text-gray-400">✕</button>
+                  </div>
+                  <table className="w-full text-sm">
+                    <tbody>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-2 font-bold text-gray-800 text-right pr-4 w-1/3">
+                          {s.totalW}-{s.total - s.totalW}
+                          <span className="text-gray-400 font-normal text-xs ml-1">({s.total})</span>
+                        </td>
+                        <td className="py-2 text-center text-gray-400 text-xs tracking-wide font-medium w-1/3">TOTAAL W-V</td>
+                        <td className="py-2 w-1/3"></td>
+                      </tr>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-2 font-bold text-gray-800 text-right pr-4">
+                          {s.singlesW}-{s.singlesTotal - s.singlesW}
+                          <span className="text-gray-400 font-normal text-xs ml-1">({s.singlesTotal})</span>
+                        </td>
+                        <td className="py-2 text-center text-gray-400 text-xs tracking-wide font-medium">ENKEL W-V</td>
+                        <td className="py-2"></td>
+                      </tr>
+                      <tr className="border-b border-gray-100">
+                        <td className="py-2 font-bold text-gray-800 text-right pr-4">
+                          {s.doublesW}-{s.doublesTotal - s.doublesW}
+                          <span className="text-gray-400 font-normal text-xs ml-1">({s.doublesTotal})</span>
+                        </td>
+                        <td className="py-2 text-center text-gray-400 text-xs tracking-wide font-medium">DUBBEL W-V</td>
+                        <td className="py-2"></td>
+                      </tr>
+                      {s.last5.length > 0 && (
+                        <tr>
+                          <td className="py-2 text-right pr-4">
+                            <div className="flex gap-1 justify-end">
+                              {s.last5.map((w, i) => (
+                                <span key={i} className={`inline-flex items-center justify-center w-7 h-7 rounded-full text-white text-xs font-bold ${w ? 'bg-green-500' : 'bg-red-400'}`}>
+                                  {w ? 'W' : 'V'}
+                                </span>
+                              ))}
+                            </div>
+                          </td>
+                          <td className="py-2 text-center text-gray-400 text-xs tracking-wide font-medium">VORM</td>
+                          <td className="py-2"></td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                  <p className="text-xs text-gray-400 mt-2 text-center">Statistieken over alle wedstrijden in de app</p>
+                </div>
+              </div>
+            )
+          })()}
 
           {/* Filter */}
           <div className="flex gap-2 mb-4">
