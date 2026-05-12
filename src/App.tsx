@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import confetti from 'canvas-confetti'
 import { supabase } from './supabase'
 import type { Player, Match } from './types'
 import { SURFACE_COLORS } from './types'
@@ -6,6 +7,20 @@ import AddMatchModal from './components/AddMatchModal'
 import H2HView from './components/H2HView'
 
 const PIN = '2729'
+
+// Dark mode: volg automatisch systeeminstellingen
+function useDarkMode() {
+  useEffect(() => {
+    const apply = (dark: boolean) => {
+      document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+    }
+    const mq = window.matchMedia('(prefers-color-scheme: dark)')
+    apply(mq.matches)
+    const handler = (e: MediaQueryListEvent) => apply(e.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
+}
 
 type Tab = 'h2h' | 'uitslagen' | 'matrix'
 type SortKey = 'name' | 'wins' | 'losses' | 'winpct'
@@ -121,6 +136,7 @@ function StatsView({ players, matches }: { players: Player[], matches: Match[] }
 }
 
 export default function App() {
+  useDarkMode()
   const [tab, setTab] = useState<Tab>('h2h')
   const [players, setPlayers] = useState<Player[]>([])
   const [matches, setMatches] = useState<Match[]>([])
@@ -171,6 +187,13 @@ export default function App() {
     await loadData()
     setShowAddMatch(false)
     setSaving(false)
+    // 🎉 Confetti!
+    confetti({
+      particleCount: 120,
+      spread: 80,
+      origin: { y: 0.6 },
+      colors: ['#22c55e', '#f97316', '#3b82f6', '#eab308', '#ec4899'],
+    })
   }
 
   const handleEditMatch = async (id: number, updates: Partial<Match>) => {
