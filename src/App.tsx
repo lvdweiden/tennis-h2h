@@ -5,6 +5,8 @@ import { SURFACE_COLORS } from './types'
 import AddMatchModal from './components/AddMatchModal'
 import H2HView from './components/H2HView'
 
+const PIN = '2729'
+
 type Tab = 'h2h' | 'uitslagen' | 'matrix'
 type SortKey = 'name' | 'wins' | 'losses' | 'winpct'
 
@@ -110,6 +112,10 @@ export default function App() {
   const [showAddPlayer, setShowAddPlayer] = useState(false)
   const [newPlayerName, setNewPlayerName] = useState('')
   const [saving, setSaving] = useState(false)
+  const [isUnlocked, setIsUnlocked] = useState(() => sessionStorage.getItem('tennis_unlocked') === '1')
+  const [showPinModal, setShowPinModal] = useState(false)
+  const [pinInput, setPinInput] = useState('')
+  const [pinError, setPinError] = useState(false)
 
   const loadData = async () => {
     setLoading(true)
@@ -123,6 +129,24 @@ export default function App() {
   }
 
   useEffect(() => { loadData() }, [])
+
+  const handleUnlock = () => {
+    if (pinInput === PIN) {
+      sessionStorage.setItem('tennis_unlocked', '1')
+      setIsUnlocked(true)
+      setShowPinModal(false)
+      setPinInput('')
+      setPinError(false)
+    } else {
+      setPinError(true)
+      setPinInput('')
+    }
+  }
+
+  const handleLock = () => {
+    sessionStorage.removeItem('tennis_unlocked')
+    setIsUnlocked(false)
+  }
 
   const handleAddMatch = async (matchData: Omit<Match, 'id'>) => {
     setSaving(true)
@@ -171,13 +195,24 @@ export default function App() {
               <h1 className="text-2xl font-black tracking-tight">🎾 Tennis H2H</h1>
               <p className="text-green-200 text-xs mt-0.5">Head to Head Tracker</p>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => setShowAddPlayer(true)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-green-800" title="Speler toevoegen">
-                👤+
-              </button>
-              <button onClick={() => setShowAddMatch(true)} className="btn btn-sm bg-white text-green-800 hover:bg-green-50 font-bold">
-                + Uitslag
-              </button>
+            <div className="flex gap-2 items-center">
+              {isUnlocked ? (
+                <>
+                  <button onClick={() => setShowAddPlayer(true)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-green-800" title="Speler toevoegen">
+                    👤+
+                  </button>
+                  <button onClick={() => setShowAddMatch(true)} className="btn btn-sm bg-white text-green-800 hover:bg-green-50 font-bold">
+                    + Uitslag
+                  </button>
+                  <button onClick={handleLock} className="btn btn-sm btn-ghost text-white" title="Vergrendelen">
+                    🔓
+                  </button>
+                </>
+              ) : (
+                <button onClick={() => { setShowPinModal(true); setPinError(false); setPinInput('') }} className="btn btn-sm btn-ghost text-white" title="Ontgrendelen">
+                  🔒
+                </button>
+              )}
             </div>
           </div>
         </div>
@@ -203,7 +238,7 @@ export default function App() {
           <div className="text-center py-20"><span className="loading loading-spinner loading-lg text-green-600"></span></div>
         ) : (
           <>
-            {tab === 'h2h' && <H2HView players={players} matches={matches} onEditMatch={handleEditMatch} onDeleteMatch={handleDeleteMatch} />}
+            {tab === 'h2h' && <H2HView players={players} matches={matches} onEditMatch={handleEditMatch} onDeleteMatch={handleDeleteMatch} isUnlocked={isUnlocked} />}
             {tab === 'matrix' && (
               <div>
                 <div className="card bg-base-100 shadow-md mb-4">
@@ -259,6 +294,33 @@ export default function App() {
           </>
         )}
       </div>
+
+      {/* PIN Modal */}
+      {showPinModal && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-xs text-center">
+            <h3 className="font-bold text-lg mb-1">🔐 Pincode invoeren</h3>
+            <p className="text-sm text-gray-500 mb-4">Voer de pincode in om te bewerken</p>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              className={`input input-bordered w-full text-center text-2xl tracking-widest mb-2 ${pinError ? 'input-error' : ''}`}
+              placeholder="••••"
+              value={pinInput}
+              onChange={e => { setPinInput(e.target.value); setPinError(false) }}
+              onKeyDown={e => e.key === 'Enter' && handleUnlock()}
+              autoFocus
+            />
+            {pinError && <p className="text-error text-sm mb-2">Onjuiste pincode</p>}
+            <div className="modal-action justify-center gap-2">
+              <button onClick={() => setShowPinModal(false)} className="btn btn-ghost">Annuleren</button>
+              <button onClick={handleUnlock} disabled={!pinInput} className="btn btn-primary">Ontgrendelen</button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setShowPinModal(false)}></div>
+        </div>
+      )}
 
       {/* Modals */}
       {showAddMatch && (

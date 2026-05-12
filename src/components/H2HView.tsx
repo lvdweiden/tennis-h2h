@@ -8,6 +8,7 @@ interface Props {
   matches: Match[]
   onEditMatch: (id: number, updates: Partial<Match>) => void
   onDeleteMatch: (id: number) => void
+  isUnlocked: boolean
 }
 
 type FilterType = 'all' | 'singles' | 'doubles'
@@ -22,7 +23,7 @@ function parseSets(sets: string): number[][] {
 }
 
 
-export default function H2HView({ players, matches, onEditMatch, onDeleteMatch }: Props) {
+export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, isUnlocked }: Props) {
   const [selectedP1, setSelectedP1] = useState<number | null>(null)
   const [selectedP2, setSelectedP2] = useState<number | null>(null)
   const [filter, setFilter] = useState<FilterType>('all')
@@ -205,7 +206,7 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch }
                           {parsedSets.map((s, i) => <span key={i} className="mr-2">{s[0]}-{s[1]}</span>)}
                         </div>
                       </div>
-                      <button onClick={() => setEditingMatch(m)} className="btn btn-ghost btn-xs ml-2">✏️</button>
+                      {isUnlocked && <button onClick={() => setEditingMatch(m)} className="btn btn-ghost btn-xs ml-2">✏️</button>}
                     </div>
                   </div>
                 </div>
