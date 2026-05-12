@@ -96,8 +96,8 @@ export default function PlayerProfile({ player, players, matches, onBack }: Prop
   return (
     <div className="max-w-lg mx-auto">
       {/* Terug knop */}
-      <button onClick={onBack} className="btn btn-ghost btn-sm mb-4 gap-1">
-        ← Terug naar ranglijst
+      <button onClick={onBack} className="btn btn-outline btn-sm mb-4 gap-2 flex items-center">
+        <span className="text-lg leading-none">←</span> Terug naar overzicht
       </button>
 
       {/* Hero sectie */}
