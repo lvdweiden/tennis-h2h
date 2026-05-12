@@ -25,20 +25,40 @@ function parseSets(sets: string): number[][] {
 
 export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, isUnlocked }: Props) {
   const [selectedP1, setSelectedP1] = useState<number | null>(null)
+  const [selectedP1Partner, setSelectedP1Partner] = useState<number | null>(null)
   const [selectedP2, setSelectedP2] = useState<number | null>(null)
+  const [selectedP2Partner, setSelectedP2Partner] = useState<number | null>(null)
   const [filter, setFilter] = useState<FilterType>('all')
   const [editingMatch, setEditingMatch] = useState<Match | null>(null)
 
   const relevantMatches = matches.filter(m => {
     if (!selectedP1 || !selectedP2 || selectedP1 === selectedP2) return false
     if (m.match_type === 'doubles') {
-      // Alleen tellen als ze op VERSCHILLENDE teams staan
-      const p1inTeam1 = m.player1_id === selectedP1 || m.team1_player2_id === selectedP1
-      const p1inTeam2 = m.player2_id === selectedP1 || m.team2_player2_id === selectedP1
-      const p2inTeam1 = m.player1_id === selectedP2 || m.team1_player2_id === selectedP2
-      const p2inTeam2 = m.player2_id === selectedP2 || m.team2_player2_id === selectedP2
-      return (p1inTeam1 && p2inTeam2) || (p1inTeam2 && p2inTeam1)
+      const team1 = [m.player1_id, m.team1_player2_id]
+      const team2 = [m.player2_id, m.team2_player2_id]
+      const p1inTeam1 = team1.includes(selectedP1)
+      const p1inTeam2 = team2.includes(selectedP1)
+      const p2inTeam1 = team1.includes(selectedP2)
+      const p2inTeam2 = team2.includes(selectedP2)
+      const oppositeTeams = (p1inTeam1 && p2inTeam2) || (p1inTeam2 && p2inTeam1)
+      if (!oppositeTeams) return false
+      // Als partners gekozen zijn: check exact team
+      if (selectedP1Partner) {
+        const p1PartnerInTeam1 = team1.includes(selectedP1Partner)
+        const p1PartnerInTeam2 = team2.includes(selectedP1Partner)
+        if (p1inTeam1 && !p1PartnerInTeam1) return false
+        if (p1inTeam2 && !p1PartnerInTeam2) return false
+      }
+      if (selectedP2Partner) {
+        const p2PartnerInTeam1 = team1.includes(selectedP2Partner)
+        const p2PartnerInTeam2 = team2.includes(selectedP2Partner)
+        if (p2inTeam1 && !p2PartnerInTeam1) return false
+        if (p2inTeam2 && !p2PartnerInTeam2) return false
+      }
+      return true
     } else {
+      // Als er een partner geselecteerd is maar wedstrijd is enkel → niet tonen
+      if (selectedP1Partner || selectedP2Partner) return false
       const ids = [m.player1_id, m.player2_id]
       return ids.includes(selectedP1) && ids.includes(selectedP2)
     }
@@ -104,19 +124,41 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
         <div className="card-body">
           <h2 className="card-title text-xl mb-4">🎾 Head to Head</h2>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="label"><span className="label-text font-semibold">Speler 1</span></label>
-              <select className="select select-bordered w-full" value={selectedP1 || ''} onChange={e => setSelectedP1(e.target.value ? parseInt(e.target.value) : null)}>
-                <option value="">Kies speler...</option>
-                {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
+            <div className="space-y-2">
+              <div>
+                <label className="label"><span className="label-text font-semibold">Speler 1</span></label>
+                <select className="select select-bordered w-full" value={selectedP1 || ''} onChange={e => { setSelectedP1(e.target.value ? parseInt(e.target.value) : null); setSelectedP1Partner(null) }}>
+                  <option value="">Kies speler...</option>
+                  {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              {selectedP1 && (
+                <div>
+                  <label className="label"><span className="label-text text-xs text-gray-400">+ Partner (optioneel)</span></label>
+                  <select className="select select-bordered select-sm w-full" value={selectedP1Partner || ''} onChange={e => setSelectedP1Partner(e.target.value ? parseInt(e.target.value) : null)}>
+                    <option value="">Geen partner</option>
+                    {players.filter(p => p.id !== selectedP1 && p.id !== selectedP2 && p.id !== selectedP2Partner).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
-            <div>
-              <label className="label"><span className="label-text font-semibold">Speler 2</span></label>
-              <select className="select select-bordered w-full" value={selectedP2 || ''} onChange={e => setSelectedP2(e.target.value ? parseInt(e.target.value) : null)}>
-                <option value="">Kies speler...</option>
-                {players.filter(p => p.id !== selectedP1).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-              </select>
+            <div className="space-y-2">
+              <div>
+                <label className="label"><span className="label-text font-semibold">Speler 2</span></label>
+                <select className="select select-bordered w-full" value={selectedP2 || ''} onChange={e => { setSelectedP2(e.target.value ? parseInt(e.target.value) : null); setSelectedP2Partner(null) }}>
+                  <option value="">Kies speler...</option>
+                  {players.filter(p => p.id !== selectedP1).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                </select>
+              </div>
+              {selectedP2 && (
+                <div>
+                  <label className="label"><span className="label-text text-xs text-gray-400">+ Partner (optioneel)</span></label>
+                  <select className="select select-bordered select-sm w-full" value={selectedP2Partner || ''} onChange={e => setSelectedP2Partner(e.target.value ? parseInt(e.target.value) : null)}>
+                    <option value="">Geen partner</option>
+                    {players.filter(p => p.id !== selectedP2 && p.id !== selectedP1 && p.id !== selectedP1Partner).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
+                  </select>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -130,7 +172,7 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
               <div className="flex items-center justify-between">
                 <div className="text-center flex-1">
                   <div className="text-4xl font-black">{p1wins}</div>
-                  <div className="text-lg font-semibold mt-1">{p1?.name}</div>
+                  <div className="text-lg font-semibold mt-1">{p1?.name}{selectedP1Partner && <span className="text-sm opacity-80"> & {players.find(p => p.id === selectedP1Partner)?.name}</span>}</div>
                   <div className="text-xs opacity-70 mt-2">🎯 Sets: {p1Sets}</div>
                   <div className="text-xs opacity-70">🎾 Games: {p1Games}</div>
                 </div>
@@ -140,7 +182,7 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
                 </div>
                 <div className="text-center flex-1">
                   <div className="text-4xl font-black">{p2wins}</div>
-                  <div className="text-lg font-semibold mt-1">{p2?.name}</div>
+                  <div className="text-lg font-semibold mt-1">{p2?.name}{selectedP2Partner && <span className="text-sm opacity-80"> & {players.find(p => p.id === selectedP2Partner)?.name}</span>}</div>
                   <div className="text-xs opacity-70 mt-2">🎯 Sets: {p2Sets}</div>
                   <div className="text-xs opacity-70">🎾 Games: {p2Games}</div>
                 </div>
