@@ -143,7 +143,7 @@ export default function App() {
   const [matches, setMatches] = useState<Match[]>([])
   const [loading, setLoading] = useState(true)
   const [showAddMatch, setShowAddMatch] = useState(false)
-  const [showAddPlayer, setShowAddPlayer] = useState(false)
+  const [showManagePlayers, setShowManagePlayers] = useState(false)
   const [newPlayerName, setNewPlayerName] = useState('')
   const [saving, setSaving] = useState(false)
   const [isUnlocked, setIsUnlocked] = useState(() => sessionStorage.getItem('tennis_unlocked') === '1')
@@ -248,7 +248,20 @@ export default function App() {
     await supabase.from('tennis_players').insert({ name })
     await loadData()
     setNewPlayerName('')
-    setShowAddPlayer(false)
+    setShowManagePlayers(false)
+    setSaving(false)
+  }
+
+  const handleDeletePlayer = async (playerId: number) => {
+    const hasMatches = matches.some(m =>
+      m.player1_id === playerId || m.player2_id === playerId ||
+      m.team1_player2_id === playerId || m.team2_player2_id === playerId
+    )
+    if (hasMatches) return
+    if (!confirm('Weet je zeker dat je deze speler wilt verwijderen?')) return
+    setSaving(true)
+    await supabase.from('tennis_players').delete().eq('id', playerId)
+    await loadData()
     setSaving(false)
   }
 
@@ -265,8 +278,8 @@ export default function App() {
             <div className="flex gap-2 items-center">
               {isUnlocked ? (
                 <>
-                  <button onClick={() => setShowAddPlayer(true)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-green-800" title="Speler toevoegen">
-                    👤+
+                  <button onClick={() => setShowManagePlayers(true)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-green-800" title="Spelers beheren">
+                    👥
                   </button>
                   <button onClick={() => setShowManagePoules(true)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-green-800" title="Poules beheren">
                     🏆
@@ -470,25 +483,60 @@ export default function App() {
         </div>
       )}
 
-      {showAddPlayer && (
+      {showManagePlayers && (
         <div className="modal modal-open">
           <div className="modal-box max-w-sm">
-            <h3 className="font-bold text-lg mb-4">👤 Speler Toevoegen</h3>
-            <input
-              type="text"
-              className="input input-bordered w-full mb-4"
-              placeholder="Naam van de speler"
-              value={newPlayerName}
-              onChange={e => setNewPlayerName(e.target.value)}
-              onKeyDown={e => e.key === 'Enter' && handleAddPlayer()}
-              autoFocus
-            />
+            <h3 className="font-bold text-lg mb-4">👥 Spelers Beheren</h3>
+
+            {/* Bestaande spelers */}
+            <div className="mb-4">
+              <p className="text-sm font-semibold text-gray-600 mb-2">Spelers</p>
+              <div className="space-y-1 max-h-48 overflow-y-auto">
+                {players.map(p => {
+                  const hasMatches = matches.some(m =>
+                    m.player1_id === p.id || m.player2_id === p.id ||
+                    m.team1_player2_id === p.id || m.team2_player2_id === p.id
+                  )
+                  return (
+                    <div key={p.id} className="flex items-center justify-between py-1 px-2 rounded bg-gray-50">
+                      <span className="text-sm font-medium text-gray-800">{p.name}</span>
+                      {hasMatches ? (
+                        <span className="text-xs text-gray-400">heeft wedstrijden</span>
+                      ) : (
+                        <button
+                          onClick={() => handleDeletePlayer(p.id)}
+                          disabled={saving}
+                          className="btn btn-xs btn-error btn-outline"
+                          title="Verwijderen"
+                        >🗑️ Verwijder</button>
+                      )}
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+
+            {/* Nieuwe speler toevoegen */}
+            <div className="border-t pt-4">
+              <p className="text-sm font-semibold text-gray-600 mb-2">Nieuwe speler toevoegen</p>
+              <div className="flex gap-2">
+                <input
+                  type="text"
+                  className="input input-bordered input-sm flex-1"
+                  placeholder="Naam van de speler"
+                  value={newPlayerName}
+                  onChange={e => setNewPlayerName(e.target.value)}
+                  onKeyDown={e => e.key === 'Enter' && handleAddPlayer()}
+                />
+                <button onClick={handleAddPlayer} disabled={!newPlayerName.trim() || saving} className="btn btn-primary btn-sm">+ Voeg toe</button>
+              </div>
+            </div>
+
             <div className="modal-action">
-              <button onClick={() => setShowAddPlayer(false)} className="btn btn-ghost">Annuleren</button>
-              <button onClick={handleAddPlayer} disabled={!newPlayerName.trim() || saving} className="btn btn-primary">Toevoegen</button>
+              <button onClick={() => { setShowManagePlayers(false); setNewPlayerName('') }} className="btn btn-primary">Klaar</button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={() => setShowAddPlayer(false)}></div>
+          <div className="modal-backdrop" onClick={() => { setShowManagePlayers(false); setNewPlayerName('') }}></div>
         </div>
       )}
     </div>
