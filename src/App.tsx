@@ -307,12 +307,12 @@ export default function App() {
         <div className="bg-white border-b">
           <div className="max-w-2xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto">
             <button onClick={() => setSelectedPoule(null)}
-              className={`btn btn-xs flex-shrink-0 ${selectedPoule === null ? 'btn-primary' : 'btn-outline !text-gray-700 !border-gray-400 hover:!bg-gray-100 hover:!text-gray-900'}`}>
+              className={`btn btn-xs flex-shrink-0 ${selectedPoule === null ? '!bg-green-700 !text-white !border-green-700' : 'btn-outline !text-gray-700 !border-gray-400 hover:!bg-gray-100 hover:!text-gray-900'}`}>
               Alle poules
             </button>
             {poules.map(p => (
               <button key={p.id} onClick={() => setSelectedPoule(p.id)}
-                className={`btn btn-xs flex-shrink-0 ${selectedPoule === p.id ? 'btn-primary' : 'btn-outline !text-gray-700 !border-gray-400 hover:!bg-gray-100 hover:!text-gray-900'}`}>
+                className={`btn btn-xs flex-shrink-0 ${selectedPoule === p.id ? '!bg-green-700 !text-white !border-green-700' : 'btn-outline !text-gray-700 !border-gray-400 hover:!bg-gray-100 hover:!text-gray-900'}`}>
                 {p.name}
               </button>
             ))}
