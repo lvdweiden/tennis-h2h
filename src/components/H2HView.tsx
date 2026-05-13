@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react'
-import type { Match, Player } from '../types'
+import type { Match, Player, Poule } from '../types'
 import { SURFACES, SURFACE_COLORS } from '../types'
 import EditMatchModal from './EditMatchModal'
 
 interface Props {
   players: Player[]
   matches: Match[]
+  poules: Poule[]
   onEditMatch: (id: number, updates: Partial<Match>) => void
   onDeleteMatch: (id: number) => void
   isUnlocked: boolean
@@ -23,7 +24,7 @@ function parseSets(sets: string): number[][] {
 }
 
 
-export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, isUnlocked }: Props) {
+export default function H2HView({ players, matches, poules, onEditMatch, onDeleteMatch, isUnlocked }: Props) {
   const [selectedP1, setSelectedP1] = useState<number | null>(null)
   const [selectedP1Partner, setSelectedP1Partner] = useState<number | null>(null)
   const [selectedP2, setSelectedP2] = useState<number | null>(null)
@@ -204,6 +205,7 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
         <EditMatchModal
           match={editingMatch}
           players={players}
+          poules={poules}
           onSave={(id, updates) => { onEditMatch(id, updates); setEditingMatch(null) }}
           onDelete={(id) => { onDeleteMatch(id); setEditingMatch(null) }}
           onClose={() => setEditingMatch(null)}

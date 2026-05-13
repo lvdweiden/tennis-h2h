@@ -15,6 +15,13 @@ export interface Match {
   match_type: 'singles' | 'doubles'
   team1_player2_id: number | null
   team2_player2_id: number | null
+  poule_id: number | null
+}
+
+export interface Poule {
+  id: number
+  name: string
+  created_at?: string
 }
 
 export type Surface = 'Kunstgras' | 'Gravel' | 'Smashcourt' | 'Hardcourt binnen' | 'Hardcourt buiten'

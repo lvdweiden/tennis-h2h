@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import type { Player } from '../types'
+import type { Player, Poule } from '../types'
 import { SURFACES, SURFACE_COLORS } from '../types'
 
 interface Props {
   players: Player[]
+  poules: Poule[]
   onSave: (match: {
     date: string
     player1_id: number
@@ -15,11 +16,12 @@ interface Props {
     match_type: 'singles' | 'doubles'
     team1_player2_id: number | null
     team2_player2_id: number | null
+    poule_id: number | null
   }) => void
   onClose: () => void
 }
 
-export default function AddMatchModal({ players, onSave, onClose }: Props) {
+export default function AddMatchModal({ players, poules, onSave, onClose }: Props) {
   const [matchType, setMatchType] = useState<'singles' | 'doubles'>('singles')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [player1, setPlayer1] = useState('')
@@ -30,6 +32,7 @@ export default function AddMatchModal({ players, onSave, onClose }: Props) {
   const [sets, setSets] = useState([{ p1: '', p2: '' }])
   const [surface, setSurface] = useState('Kunstgras')
   const [location, setLocation] = useState('')
+  const [pouleId, setPouleId] = useState<number | null>(null)
 
   const addSet = () => setSets([...sets, { p1: '', p2: '' }])
   const removeSet = (i: number) => setSets(sets.filter((_, idx) => idx !== i))
@@ -55,6 +58,7 @@ export default function AddMatchModal({ players, onSave, onClose }: Props) {
       match_type: matchType,
       team1_player2_id: matchType === 'doubles' ? parseInt(team1p2) : null,
       team2_player2_id: matchType === 'doubles' ? parseInt(team2p2) : null,
+      poule_id: pouleId,
     })
   }
 
@@ -154,6 +158,23 @@ export default function AddMatchModal({ players, onSave, onClose }: Props) {
           <label className="label"><span className="label-text font-semibold">Locatie</span></label>
           <input type="text" className="input input-bordered" placeholder="bijv. E.T.V. de Helster" value={location} onChange={e => setLocation(e.target.value)} />
         </div>
+        {poules.length > 0 && (
+          <div className="form-control mb-4">
+            <label className="label"><span className="label-text font-semibold">Poule (optioneel)</span></label>
+            <div className="flex flex-wrap gap-2">
+              <button onClick={() => setPouleId(null)}
+                className={`btn btn-sm ${pouleId === null ? 'btn-primary' : 'btn-outline'}`}>
+                Geen poule
+              </button>
+              {poules.map(p => (
+                <button key={p.id} onClick={() => setPouleId(p.id)}
+                  className={`btn btn-sm ${pouleId === p.id ? 'btn-primary' : 'btn-outline'}`}>
+                  {p.name}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
         <div className="modal-action">
           <button onClick={onClose} className="btn btn-ghost">Annuleren</button>
           <button onClick={handleSave} className="btn btn-primary">💾 Opslaan</button>

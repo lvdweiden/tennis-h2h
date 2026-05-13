@@ -13,3 +13,16 @@ export async function fetchProfiles() {
 export async function upsertProfile(profile: Record<string, unknown>) {
   return supabase.from('tennis_player_profiles').upsert(profile, { onConflict: 'player_id' })
 }
+
+export async function fetchPoules() {
+  const { data } = await supabase.from('tennis_poules').select('*').order('created_at')
+  return data || []
+}
+
+export async function createPoule(name: string) {
+  return supabase.from('tennis_poules').insert({ name }).select().single()
+}
+
+export async function deletePoule(id: number) {
+  return supabase.from('tennis_poules').delete().eq('id', id)
+}

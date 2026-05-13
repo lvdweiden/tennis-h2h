@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import confetti from 'canvas-confetti'
-import { supabase, fetchProfiles } from './supabase'
-import type { Player, Match, PlayerProfile as TPlayerProfile } from './types'
+import { supabase, fetchProfiles, fetchPoules, createPoule, deletePoule } from './supabase'
+import type { Player, Match, PlayerProfile as TPlayerProfile, Poule } from './types'
 import { SURFACE_COLORS } from './types'
 import AddMatchModal from './components/AddMatchModal'
 import H2HView from './components/H2HView'
@@ -152,18 +152,38 @@ export default function App() {
   const [pinError, setPinError] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
   const [profiles, setProfiles] = useState<TPlayerProfile[]>([])
+  const [poules, setPoules] = useState<Poule[]>([])
+  const [selectedPoule, setSelectedPoule] = useState<number | null>(null)
+  const [showManagePoules, setShowManagePoules] = useState(false)
+  const [newPouleName, setNewPouleName] = useState('')
 
   const loadData = async () => {
     setLoading(true)
-    const [{ data: pData }, { data: mData }, prData] = await Promise.all([
+    const [{ data: pData }, { data: mData }, prData, poulesData] = await Promise.all([
       supabase.from('tennis_players').select('*').order('name'),
       supabase.from('tennis_matches').select('*').order('date', { ascending: false }),
-      fetchProfiles()
+      fetchProfiles(),
+      fetchPoules()
     ])
     if (pData) setPlayers(pData)
     if (mData) setMatches(mData)
     setProfiles(prData)
+    setPoules(poulesData)
     setLoading(false)
+  }
+
+  const handleAddPoule = async () => {
+    const name = newPouleName.trim()
+    if (!name) return
+    const { data } = await createPoule(name)
+    if (data) setPoules(prev => [...prev, data])
+    setNewPouleName('')
+  }
+
+  const handleDeletePoule = async (id: number) => {
+    await deletePoule(id)
+    setPoules(prev => prev.filter(p => p.id !== id))
+    if (selectedPoule === id) setSelectedPoule(null)
   }
 
   useEffect(() => { loadData() }, [])
@@ -185,6 +205,8 @@ export default function App() {
     sessionStorage.removeItem('tennis_unlocked')
     setIsUnlocked(false)
   }
+
+  const filteredMatches = selectedPoule !== null ? matches.filter(m => m.poule_id === selectedPoule) : matches
 
   const handleAddMatch = async (matchData: Omit<Match, 'id'>) => {
     setSaving(true)
@@ -246,6 +268,9 @@ export default function App() {
                   <button onClick={() => setShowAddPlayer(true)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-green-800" title="Speler toevoegen">
                     👤+
                   </button>
+                  <button onClick={() => setShowManagePoules(true)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-green-800" title="Poules beheren">
+                    🏆
+                  </button>
                   <button onClick={() => setShowAddMatch(true)} className="btn btn-sm bg-white text-green-800 hover:bg-green-50 font-bold">
                     + Uitslag
                   </button>
@@ -277,13 +302,31 @@ export default function App() {
         </div>
       </div>
 
+      {/* Poule filter */}
+      {poules.length > 0 && (
+        <div className="bg-white border-b">
+          <div className="max-w-2xl mx-auto px-4 py-2 flex gap-2 overflow-x-auto">
+            <button onClick={() => setSelectedPoule(null)}
+              className={`btn btn-xs flex-shrink-0 ${selectedPoule === null ? 'btn-primary' : 'btn-outline'}`}>
+              Alle poules
+            </button>
+            {poules.map(p => (
+              <button key={p.id} onClick={() => setSelectedPoule(p.id)}
+                className={`btn btn-xs flex-shrink-0 ${selectedPoule === p.id ? 'btn-primary' : 'btn-outline'}`}>
+                {p.name}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-6">
         {loading ? (
           <div className="text-center py-20"><span className="loading loading-spinner loading-lg text-green-600"></span></div>
         ) : (
           <>
-            {tab === 'h2h' && <H2HView players={players} matches={matches} onEditMatch={handleEditMatch} onDeleteMatch={handleDeleteMatch} isUnlocked={isUnlocked} />}
+            {tab === 'h2h' && <H2HView players={players} matches={filteredMatches} poules={poules} onEditMatch={handleEditMatch} onDeleteMatch={handleDeleteMatch} isUnlocked={isUnlocked} />}
             {tab === 'matrix' && (
               selectedPlayer ? (
                 <PlayerProfile
@@ -305,18 +348,18 @@ export default function App() {
                   <div className="card bg-base-100 shadow-md mb-4">
                     <div className="card-body py-4">
                       <h2 className="font-bold text-lg mb-3">📊 H2H Matrix</h2>
-                      <MatrixView players={players} matches={matches} />
+                      <MatrixView players={players} matches={filteredMatches} />
                     </div>
                   </div>
-                  <StatsView players={players} matches={matches} onSelectPlayer={(p) => setSelectedPlayer(p)} />
+                  <StatsView players={players} matches={filteredMatches} onSelectPlayer={(p) => setSelectedPlayer(p)} />
                 </div>
               )
             )}
             {tab === 'uitslagen' && (
               <div className="space-y-2">
                 <h2 className="font-bold text-lg mb-3 text-gray-900">📋 Alle Uitslagen</h2>
-                {matches.length === 0 && <div className="text-center text-gray-400 py-8">Nog geen wedstrijden</div>}
-                {matches.map(m => {
+                {filteredMatches.length === 0 && <div className="text-center text-gray-400 py-8">Nog geen wedstrijden</div>}
+                {filteredMatches.map(m => {
                   const p1 = players.find(p => p.id === m.player1_id)?.name || '?'
                   const p2 = players.find(p => p.id === m.player2_id)?.name || '?'
                   const tp1 = m.team1_player2_id ? ` & ${players.find(p => p.id === m.team1_player2_id)?.name || '?'}` : ''
@@ -388,9 +431,43 @@ export default function App() {
       {showAddMatch && (
         <AddMatchModal
           players={players}
+          poules={poules}
           onSave={handleAddMatch}
           onClose={() => setShowAddMatch(false)}
         />
+      )}
+
+      {showManagePoules && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-sm">
+            <h3 className="font-bold text-lg mb-4">🏆 Poules Beheren</h3>
+            <div className="space-y-2 mb-4">
+              {poules.length === 0 && <p className="text-sm text-gray-400">Nog geen poules aangemaakt.</p>}
+              {poules.map(p => (
+                <div key={p.id} className="flex items-center justify-between bg-base-200 rounded-lg px-3 py-2">
+                  <span className="font-medium">{p.name}</span>
+                  <button onClick={() => handleDeletePoule(p.id)} className="btn btn-ghost btn-xs text-red-500">🗑️</button>
+                </div>
+              ))}
+            </div>
+            <div className="flex gap-2 mb-4">
+              <input
+                type="text"
+                className="input input-bordered input-sm flex-1"
+                placeholder="Nieuwe poule naam..."
+                value={newPouleName}
+                onChange={e => setNewPouleName(e.target.value)}
+                onKeyDown={e => e.key === 'Enter' && handleAddPoule()}
+              />
+              <button onClick={handleAddPoule} disabled={!newPouleName.trim()} className="btn btn-primary btn-sm">+ Toevoegen</button>
+            </div>
+            <p className="text-xs text-gray-400 mb-4">💡 Wedstrijden zonder poule zijn altijd zichtbaar bij "Alle poules".</p>
+            <div className="modal-action">
+              <button onClick={() => setShowManagePoules(false)} className="btn btn-primary">Klaar</button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setShowManagePoules(false)}></div>
+        </div>
       )}
 
       {showAddPlayer && (
