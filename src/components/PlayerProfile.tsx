@@ -83,6 +83,23 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
     return inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
   }
 
+  // Top 3 dubbel partners
+  const duoStats = players
+    .filter(p => p.id !== player.id)
+    .map(partner => {
+      const duoMatches = doublesMatches.filter(m => {
+        const t1 = [m.player1_id, m.team1_player2_id]
+        const t2 = [m.player2_id, m.team2_player2_id]
+        return (t1.includes(player.id) && t1.includes(partner.id)) ||
+               (t2.includes(player.id) && t2.includes(partner.id))
+      })
+      const wins = duoMatches.filter(isWin).length
+      return { partner, played: duoMatches.length, wins, losses: duoMatches.length - wins }
+    })
+    .filter(d => d.played > 0)
+    .sort((a, b) => b.played - a.played)
+    .slice(0, 3)
+
   const totalWins = myMatches.filter(isWin).length
   const totalLosses = myMatches.length - totalWins
   const singlesWins = singlesMatches.filter(isWin).length
@@ -459,6 +476,32 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
               </div>
             </div>
           </div>
+
+          {/* Top Duo's */}
+          {duoStats.length > 0 && (
+            <div className="card bg-base-100 shadow-sm mb-4">
+              <div className="card-body py-4 px-4">
+                <h3 className="font-bold mb-3">🤝 Beste Dubbel Duo's</h3>
+                <div className="space-y-2">
+                  {duoStats.map(d => {
+                    const pct = Math.round(d.wins / d.played * 100)
+                    const color = d.wins > d.losses ? 'text-green-600' : d.wins < d.losses ? 'text-red-400' : 'text-yellow-500'
+                    return (
+                      <div key={d.partner.id} className="flex items-center gap-3">
+                        <div className={`w-7 h-7 rounded-full ${getAvatarColor(d.partner.id)} flex items-center justify-center text-white text-xs font-bold flex-shrink-0`}>
+                          {getInitials(d.partner.name)}
+                        </div>
+                        <div className="flex-1 text-sm font-medium">{d.partner.name}</div>
+                        <div className={`font-bold text-sm ${color}`}>{d.wins}–{d.losses}</div>
+                        <div className="text-xs text-gray-400 w-14 text-right">{d.played} dubbels</div>
+                        <div className="text-xs text-gray-400 w-8 text-right">{pct}%</div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Ondergrond stats */}
           {surfaceStats.length > 0 && (
