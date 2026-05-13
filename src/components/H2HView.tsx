@@ -108,6 +108,22 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
   const p1 = players.find(p => p.id === selectedP1)
   const p2 = players.find(p => p.id === selectedP2)
 
+  // Duo record: record van twee spelers als team samen in alle dubbels
+  function getPairRecord(id1: number, id2: number) {
+    const pairMatches = matches.filter(m => {
+      if (m.match_type !== 'doubles') return false
+      const team1 = [m.player1_id, m.team1_player2_id]
+      const team2 = [m.player2_id, m.team2_player2_id]
+      return (team1.includes(id1) && team1.includes(id2)) || (team2.includes(id1) && team2.includes(id2))
+    })
+    const wins = pairMatches.filter(m => {
+      const inTeam1 = [m.player1_id, m.team1_player2_id].includes(id1)
+      const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
+      return inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
+    }).length
+    return { total: pairMatches.length, wins, losses: pairMatches.length - wins }
+  }
+
   // Speler statistieken over ALLE wedstrijden (niet alleen H2H)
   function getPlayerStats(playerId: number) {
     function didWin(m: Match) {
@@ -213,6 +229,20 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
                     <option value="">Geen partner</option>
                     {players.filter(p => p.id !== selectedP1 && p.id !== selectedP2 && p.id !== selectedP2Partner).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
+                  {selectedP1Partner && (() => {
+                    const rec = getPairRecord(selectedP1, selectedP1Partner)
+                    const n1 = players.find(p => p.id === selectedP1)?.name?.split(' ')[0]
+                    const n2 = players.find(p => p.id === selectedP1Partner)?.name?.split(' ')[0]
+                    return (
+                      <div className="mt-1 px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center gap-1 flex-wrap text-xs">
+                        <span className="text-gray-500 dark:text-gray-400">🤝 {n1} &amp; {n2}:</span>
+                        {rec.total === 0
+                          ? <span className="text-gray-400">Nog geen dubbels samen</span>
+                          : <><span className="font-bold text-green-600">{rec.wins}W</span><span className="text-gray-400 mx-0.5">–</span><span className="font-bold text-red-500">{rec.losses}V</span><span className="text-gray-400 ml-1">({rec.total} dubbels)</span></>
+                        }
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
             </div>
@@ -231,6 +261,20 @@ export default function H2HView({ players, matches, onEditMatch, onDeleteMatch, 
                     <option value="">Geen partner</option>
                     {players.filter(p => p.id !== selectedP2 && p.id !== selectedP1 && p.id !== selectedP1Partner).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
                   </select>
+                  {selectedP2Partner && (() => {
+                    const rec = getPairRecord(selectedP2, selectedP2Partner)
+                    const n1 = players.find(p => p.id === selectedP2)?.name?.split(' ')[0]
+                    const n2 = players.find(p => p.id === selectedP2Partner)?.name?.split(' ')[0]
+                    return (
+                      <div className="mt-1 px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center gap-1 flex-wrap text-xs">
+                        <span className="text-gray-500 dark:text-gray-400">🤝 {n1} &amp; {n2}:</span>
+                        {rec.total === 0
+                          ? <span className="text-gray-400">Nog geen dubbels samen</span>
+                          : <><span className="font-bold text-green-600">{rec.wins}W</span><span className="text-gray-400 mx-0.5">–</span><span className="font-bold text-red-500">{rec.losses}V</span><span className="text-gray-400 ml-1">({rec.total} dubbels)</span></>
+                        }
+                      </div>
+                    )
+                  })()}
                 </div>
               )}
             </div>
