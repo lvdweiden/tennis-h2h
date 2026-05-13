@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import confetti from 'canvas-confetti'
-import { supabase, fetchProfiles, fetchPoules, createPoule, deletePoule } from './supabase'
+import { supabase, fetchProfiles, fetchPoules, createPoule, deletePoule, addPouleMember, removePouleMember } from './supabase'
 import type { Player, Match, PlayerProfile as TPlayerProfile, Poule } from './types'
 import { SURFACE_COLORS } from './types'
 import AddMatchModal from './components/AddMatchModal'
@@ -156,6 +156,10 @@ export default function App() {
   const [selectedPoule, setSelectedPoule] = useState<number | null>(null)
   const [showManagePoules, setShowManagePoules] = useState(false)
   const [newPouleName, setNewPouleName] = useState('')
+  const [expandedPoule, setExpandedPoule] = useState<number | null>(null)
+  const [deleteConfirm, setDeleteConfirm] = useState<{
+    type: 'poule' | 'player', id: number, name: string, pinInput: string, pinError: boolean
+  } | null>(null)
 
   const loadData = async () => {
     setLoading(true)
@@ -180,10 +184,39 @@ export default function App() {
     setNewPouleName('')
   }
 
-  const handleDeletePoule = async (id: number) => {
-    await deletePoule(id)
-    setPoules(prev => prev.filter(p => p.id !== id))
-    if (selectedPoule === id) setSelectedPoule(null)
+  const handleDeletePoule = (id: number, name: string) => {
+    setDeleteConfirm({ type: 'poule', id, name, pinInput: '', pinError: false })
+  }
+
+  const handleTogglePouleMember = async (pouleId: number, playerId: number, isMember: boolean) => {
+    if (isMember) {
+      await removePouleMember(pouleId, playerId)
+      setPoules(prev => prev.map(p => p.id === pouleId
+        ? ({ ...p, player_ids: (p.player_ids || []).filter(id => id !== playerId) }) as typeof p
+        : p))
+    } else {
+      await addPouleMember(pouleId, playerId)
+      setPoules(prev => prev.map(p => p.id === pouleId
+        ? ({ ...p, player_ids: [...(p.player_ids || []), playerId] }) as typeof p
+        : p))
+    }
+  }
+
+  const handleConfirmDelete = async () => {
+    if (!deleteConfirm) return
+    if (deleteConfirm.pinInput !== PIN) {
+      setDeleteConfirm(prev => prev ? { ...prev, pinError: true, pinInput: '' } : null)
+      return
+    }
+    if (deleteConfirm.type === 'poule') {
+      await deletePoule(deleteConfirm.id)
+      setPoules(prev => prev.filter(p => p.id !== deleteConfirm.id))
+      if (selectedPoule === deleteConfirm.id) setSelectedPoule(null)
+    } else {
+      await supabase.from('tennis_players').delete().eq('id', deleteConfirm.id)
+      await loadData()
+    }
+    setDeleteConfirm(null)
   }
 
   useEffect(() => { loadData() }, [])
@@ -207,6 +240,9 @@ export default function App() {
   }
 
   const filteredMatches = selectedPoule !== null ? matches.filter(m => m.poule_id === selectedPoule) : matches
+  const filteredPlayers = selectedPoule !== null
+    ? players.filter(p => poules.find(po => po.id === selectedPoule)?.player_ids?.includes(p.id) ?? false)
+    : players
 
   const handleAddMatch = async (matchData: Omit<Match, 'id'>) => {
     setSaving(true)
@@ -252,17 +288,13 @@ export default function App() {
     setSaving(false)
   }
 
-  const handleDeletePlayer = async (playerId: number) => {
+  const handleDeletePlayer = (playerId: number, playerName: string) => {
     const hasMatches = matches.some(m =>
       m.player1_id === playerId || m.player2_id === playerId ||
       m.team1_player2_id === playerId || m.team2_player2_id === playerId
     )
     if (hasMatches) return
-    if (!confirm('Weet je zeker dat je deze speler wilt verwijderen?')) return
-    setSaving(true)
-    await supabase.from('tennis_players').delete().eq('id', playerId)
-    await loadData()
-    setSaving(false)
+    setDeleteConfirm({ type: 'player', id: playerId, name: playerName, pinInput: '', pinError: false })
   }
 
   return (
@@ -339,7 +371,7 @@ export default function App() {
           <div className="text-center py-20"><span className="loading loading-spinner loading-lg text-green-600"></span></div>
         ) : (
           <>
-            {tab === 'h2h' && <H2HView players={players} matches={filteredMatches} poules={poules} onEditMatch={handleEditMatch} onDeleteMatch={handleDeleteMatch} isUnlocked={isUnlocked} />}
+            {tab === 'h2h' && <H2HView players={filteredPlayers} matches={filteredMatches} poules={poules} onEditMatch={handleEditMatch} onDeleteMatch={handleDeleteMatch} isUnlocked={isUnlocked} />}
             {tab === 'matrix' && (
               selectedPlayer ? (
                 <PlayerProfile
@@ -361,10 +393,10 @@ export default function App() {
                   <div className="card bg-base-100 shadow-md mb-4">
                     <div className="card-body py-4">
                       <h2 className="font-bold text-lg mb-3">📊 H2H Matrix</h2>
-                      <MatrixView players={players} matches={filteredMatches} />
+                      <MatrixView players={filteredPlayers} matches={filteredMatches} />
                     </div>
                   </div>
-                  <StatsView players={players} matches={filteredMatches} onSelectPlayer={(p) => setSelectedPlayer(p)} />
+                  <StatsView players={filteredPlayers} matches={filteredMatches} onSelectPlayer={(p) => setSelectedPlayer(p)} />
                 </div>
               )
             )}
@@ -457,9 +489,39 @@ export default function App() {
             <div className="space-y-2 mb-4">
               {poules.length === 0 && <p className="text-sm text-gray-400">Nog geen poules aangemaakt.</p>}
               {poules.map(p => (
-                <div key={p.id} className="flex items-center justify-between bg-base-200 rounded-lg px-3 py-2">
-                  <span className="font-medium">{p.name}</span>
-                  <button onClick={() => handleDeletePoule(p.id)} className="btn btn-ghost btn-xs text-red-500">🗑️</button>
+                <div key={p.id} className="bg-base-200 rounded-lg overflow-hidden">
+                  <div className="flex items-center justify-between px-3 py-2">
+                    <button
+                      className="flex items-center gap-2 flex-1 text-left font-medium"
+                      onClick={() => setExpandedPoule(expandedPoule === p.id ? null : p.id)}
+                    >
+                      <span>{expandedPoule === p.id ? '▾' : '▸'}</span>
+                      <span>{p.name}</span>
+                      <span className="text-xs text-gray-400 font-normal">({(p.player_ids || []).length} spelers)</span>
+                    </button>
+                    <button onClick={() => handleDeletePoule(p.id, p.name)} className="btn btn-ghost btn-xs text-red-500">🗑️</button>
+                  </div>
+                  {expandedPoule === p.id && (
+                    <div className="px-3 pb-3 border-t border-base-300 pt-2">
+                      <p className="text-xs text-gray-500 mb-2">Vink spelers aan om ze aan deze poule toe te voegen:</p>
+                      <div className="space-y-1">
+                        {players.map(player => {
+                          const isMember = (p.player_ids || []).includes(player.id)
+                          return (
+                            <label key={player.id} className="flex items-center gap-2 cursor-pointer hover:bg-base-300 rounded px-2 py-1">
+                              <input
+                                type="checkbox"
+                                className="checkbox checkbox-sm checkbox-primary"
+                                checked={isMember}
+                                onChange={() => handleTogglePouleMember(p.id, player.id, isMember)}
+                              />
+                              <span className="text-sm">{player.name}</span>
+                            </label>
+                          )
+                        })}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -476,10 +538,10 @@ export default function App() {
             </div>
             <p className="text-xs text-gray-400 mb-4">💡 Wedstrijden zonder poule zijn altijd zichtbaar bij "Alle poules".</p>
             <div className="modal-action">
-              <button onClick={() => setShowManagePoules(false)} className="btn btn-primary">Klaar</button>
+              <button onClick={() => { setShowManagePoules(false); setExpandedPoule(null) }} className="btn btn-primary">Klaar</button>
             </div>
           </div>
-          <div className="modal-backdrop" onClick={() => setShowManagePoules(false)}></div>
+          <div className="modal-backdrop" onClick={() => { setShowManagePoules(false); setExpandedPoule(null) }}></div>
         </div>
       )}
 
@@ -504,7 +566,7 @@ export default function App() {
                         <span className="text-xs text-gray-400">heeft wedstrijden</span>
                       ) : (
                         <button
-                          onClick={() => handleDeletePlayer(p.id)}
+                          onClick={() => handleDeletePlayer(p.id, p.name)}
                           disabled={saving}
                           className="btn btn-xs btn-error btn-outline"
                           title="Verwijderen"
@@ -537,6 +599,33 @@ export default function App() {
             </div>
           </div>
           <div className="modal-backdrop" onClick={() => { setShowManagePlayers(false); setNewPlayerName('') }}></div>
+        </div>
+      )}
+
+      {/* Delete Confirm Modal */}
+      {deleteConfirm && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-xs text-center" style={{ background: 'white', color: '#111' }}>
+            <h3 className="font-bold text-lg mb-1">🗑️ Verwijderen</h3>
+            <p className="text-sm text-gray-500 mb-4">Voer de pincode in om <strong>"{deleteConfirm.name}"</strong> te verwijderen</p>
+            <input
+              type="password"
+              inputMode="numeric"
+              maxLength={6}
+              className={`input input-bordered w-full text-center text-2xl tracking-widest mb-2 ${deleteConfirm.pinError ? 'input-error' : ''}`}
+              placeholder="••••"
+              value={deleteConfirm.pinInput}
+              onChange={e => setDeleteConfirm(prev => prev ? { ...prev, pinInput: e.target.value, pinError: false } : null)}
+              onKeyDown={e => e.key === 'Enter' && handleConfirmDelete()}
+              autoFocus
+            />
+            {deleteConfirm.pinError && <p className="text-error text-sm mb-2">Onjuiste pincode</p>}
+            <div className="modal-action justify-center gap-2">
+              <button onClick={() => setDeleteConfirm(null)} className="btn btn-ghost">Annuleren</button>
+              <button onClick={handleConfirmDelete} disabled={!deleteConfirm.pinInput} className="btn btn-error">Verwijderen</button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setDeleteConfirm(null)}></div>
         </div>
       )}
     </div>

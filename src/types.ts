@@ -22,6 +22,7 @@ export interface Poule {
   id: number
   name: string
   created_at?: string
+  player_ids?: number[]
 }
 
 export type Surface = 'Kunstgras' | 'Gravel' | 'Smashcourt' | 'Hardcourt binnen' | 'Hardcourt buiten'
