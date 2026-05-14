@@ -83,11 +83,11 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
   filteredMatches.forEach(m => {
     const p1inTeam1 = m.player1_id === selectedP1 || m.team1_player2_id === selectedP1
     const parsed = parseSets(m.sets)
-    parsed.forEach(([t1, t2]) => {
+    parsed.forEach((set) => {
+      const [t1, t2, isStb] = set
       const myGames = p1inTeam1 ? t1 : t2
       const oppGames = p1inTeam1 ? t2 : t1
-      p1Games += myGames
-      p2Games += oppGames
+      if (!isStb) { p1Games += myGames; p2Games += oppGames }
       if (myGames > oppGames) p1Sets++
       else if (oppGames > myGames) p2Sets++
     })
@@ -458,7 +458,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
                           <span className={`font-semibold text-sm ${winnerTeam === 'team2' ? 'text-green-600' : 'text-gray-500'}`}>{team2}</span>
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          {parsedSets.map((s, i) => <span key={i} className="mr-2">{s[0]}-{s[1]}</span>)}
+                          {parsedSets.map((s, i) => <span key={i} className="mr-2">{s[0]}-{s[1]}{s[2] === 1 ? <span className="text-xs text-orange-500 ml-0.5">STB</span> : null}</span>)}
                         </div>
                       </div>
                       {isUnlocked && <button onClick={() => setEditingMatch(m)} className="btn btn-ghost btn-xs ml-2">✏️</button>}

@@ -618,7 +618,7 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
                           </div>
                         </div>
                         <div className="text-xs text-gray-500 text-right flex-shrink-0">
-                          {sets.map((s, i) => <span key={i} className="block">{s[0]}–{s[1]}</span>)}
+                          {sets.map((s, i) => <span key={i} className="block">{s[0]}–{s[1]}{s[2] === 1 ? <span className="text-xs text-orange-500 ml-0.5">STB</span> : null}</span>)}
                         </div>
                       </div>
                     )

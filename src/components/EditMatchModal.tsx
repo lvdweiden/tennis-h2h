@@ -19,20 +19,23 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
   const [team1p2, setTeam1p2] = useState(match.team1_player2_id ? String(match.team1_player2_id) : '')
   const [team2p2, setTeam2p2] = useState(match.team2_player2_id ? String(match.team2_player2_id) : '')
   const [winner, setWinner] = useState<'team1' | 'team2'>(match.winner_id === match.player1_id ? 'team1' : 'team2')
-  const [sets, setSets] = useState(parsedSets.map(s => ({ p1: String(s[0]), p2: String(s[1]) })))
+  const [sets, setSets] = useState(parsedSets.map(s => ({ p1: String(s[0]), p2: String(s[1]), stb: s[2] === 1 })))
   const [surface, setSurface] = useState(match.surface || 'Kunstgras')
   const [location, setLocation] = useState(match.location || '')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [pouleId, setPouleId] = useState<number | null>(match.poule_id ?? null)
 
-  const addSet = () => setSets([...sets, { p1: '', p2: '' }])
+  const addSet = () => setSets([...sets, { p1: '', p2: '', stb: false }])
   const removeSet = (i: number) => setSets(sets.filter((_, idx) => idx !== i))
   const updateSet = (i: number, key: 'p1' | 'p2', val: string) => {
     const s = [...sets]; s[i] = { ...s[i], [key]: val }; setSets(s)
   }
+  const toggleStb = (i: number) => {
+    const s = [...sets]; s[i] = { ...s[i], stb: !s[i].stb }; setSets(s)
+  }
 
   const handleSave = () => {
-    const setsData = sets.map(s => [parseInt(s.p1) || 0, parseInt(s.p2) || 0])
+    const setsData = sets.map(s => s.stb ? [parseInt(s.p1) || 0, parseInt(s.p2) || 0, 1] : [parseInt(s.p1) || 0, parseInt(s.p2) || 0])
     const p1id = parseInt(player1)
     const p2id = parseInt(player2)
     onSave(match.id, {
@@ -113,11 +116,15 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
         <div className="form-control mb-3">
           <label className="label"><span className="label-text font-semibold">Sets</span></label>
           {sets.map((s, i) => (
-            <div key={i} className="flex items-center gap-2 mb-1">
-              <span className="text-xs text-gray-500 w-12">Set {i + 1}</span>
-              <input type="number" min="0" max="7" className="input input-bordered input-sm w-16 text-center" value={s.p1} onChange={e => updateSet(i, 'p1', e.target.value)} />
+            <div key={i} className="flex flex-wrap items-center gap-2 mb-1">
+              <span className="text-xs text-gray-500 w-12">{s.stb ? '🏆 STB' : `Set ${i + 1}`}</span>
+              <input type="number" min="0" max={s.stb ? 99 : 7} className="input input-bordered input-sm w-16 text-center" value={s.p1} onChange={e => updateSet(i, 'p1', e.target.value)} />
               <span className="font-bold">-</span>
-              <input type="number" min="0" max="7" className="input input-bordered input-sm w-16 text-center" value={s.p2} onChange={e => updateSet(i, 'p2', e.target.value)} />
+              <input type="number" min="0" max={s.stb ? 99 : 7} className="input input-bordered input-sm w-16 text-center" value={s.p2} onChange={e => updateSet(i, 'p2', e.target.value)} />
+              <label className="flex items-center gap-1 text-xs cursor-pointer ml-1">
+                <input type="checkbox" className="checkbox checkbox-xs" checked={s.stb} onChange={() => toggleStb(i)} />
+                <span className="text-gray-500">STB</span>
+              </label>
               {sets.length > 1 && <button onClick={() => removeSet(i)} className="btn btn-ghost btn-xs text-red-500">✕</button>}
             </div>
           ))}
