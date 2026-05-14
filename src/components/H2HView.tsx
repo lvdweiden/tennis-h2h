@@ -32,6 +32,10 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
   const [selectedP1Partner, setSelectedP1Partner] = useState<number | null>(null)
   const [selectedP2, setSelectedP2] = useState<number | null>(null)
   const [selectedP2Partner, setSelectedP2Partner] = useState<number | null>(null)
+  const [p1Search, setP1Search] = useState('')
+  const [p2Search, setP2Search] = useState('')
+  const [p1Open, setP1Open] = useState(false)
+  const [p2Open, setP2Open] = useState(false)
   const [filter, setFilter] = useState<FilterType>('all')
   const [editingMatch, setEditingMatch] = useState<Match | null>(null)
   const [detailMatch, setDetailMatch] = useState<Match | null>(null)
@@ -223,10 +227,26 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
             <div className="space-y-2">
               <div>
                 <label className="label"><span className="label-text font-semibold">Speler 1</span></label>
-                <select className="select select-bordered w-full" value={selectedP1 || ''} onChange={e => { setSelectedP1(e.target.value ? parseInt(e.target.value) : null); setSelectedP1Partner(null) }}>
-                  <option value="">Kies speler...</option>
-                  {players.map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
+                {/* Searchable dropdown P1 */}
+                <div className="relative">
+                  <div className="input input-bordered w-full flex items-center gap-2 cursor-pointer" onClick={() => { setP1Open(o => !o); setP2Open(false) }}>
+                    <span className={selectedP1 ? "font-semibold" : "text-gray-400"}>{selectedP1 ? players.find(p => p.id === selectedP1)?.name : "Kies speler..."}</span>
+                    <span className="ml-auto text-gray-400">▾</span>
+                  </div>
+                  {p1Open && (
+                    <div className="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-xl shadow-lg">
+                      <div className="p-2 border-b border-base-200">
+                        <input autoFocus className="input input-sm input-bordered w-full" placeholder="Zoeken..." value={p1Search} onChange={e => setP1Search(e.target.value)} onClick={e => e.stopPropagation()} />
+                      </div>
+                      <ul className="max-h-48 overflow-y-auto py-1">
+                        {players.filter(p => p.name.toLowerCase().includes(p1Search.toLowerCase())).map(p => (
+                          <li key={p.id} className={`px-3 py-2 cursor-pointer hover:bg-base-200 ${p.id === selectedP1 ? 'font-bold text-primary' : ''}`} onClick={() => { setSelectedP1(p.id); setSelectedP1Partner(null); setP1Open(false); setP1Search('') }}>{p.name}</li>
+                        ))}
+                        {selectedP1 && <li className="px-3 py-2 cursor-pointer hover:bg-base-200 text-gray-400 text-sm border-t border-base-200" onClick={() => { setSelectedP1(null); setSelectedP1Partner(null); setP1Open(false); setP1Search('') }}>✕ Wissen</li>}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
               {selectedP1 && (
                 <div>
@@ -255,10 +275,26 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
             <div className="space-y-2">
               <div>
                 <label className="label"><span className="label-text font-semibold">Speler 2</span></label>
-                <select className="select select-bordered w-full" value={selectedP2 || ''} onChange={e => { setSelectedP2(e.target.value ? parseInt(e.target.value) : null); setSelectedP2Partner(null) }}>
-                  <option value="">Kies speler...</option>
-                  {players.filter(p => p.id !== selectedP1).map(p => <option key={p.id} value={p.id}>{p.name}</option>)}
-                </select>
+                {/* Searchable dropdown P2 */}
+                <div className="relative">
+                  <div className="input input-bordered w-full flex items-center gap-2 cursor-pointer" onClick={() => { setP2Open(o => !o); setP1Open(false) }}>
+                    <span className={selectedP2 ? "font-semibold" : "text-gray-400"}>{selectedP2 ? players.find(p => p.id === selectedP2)?.name : "Kies speler..."}</span>
+                    <span className="ml-auto text-gray-400">▾</span>
+                  </div>
+                  {p2Open && (
+                    <div className="absolute z-50 w-full mt-1 bg-base-100 border border-base-300 rounded-xl shadow-lg">
+                      <div className="p-2 border-b border-base-200">
+                        <input autoFocus className="input input-sm input-bordered w-full" placeholder="Zoeken..." value={p2Search} onChange={e => setP2Search(e.target.value)} onClick={e => e.stopPropagation()} />
+                      </div>
+                      <ul className="max-h-48 overflow-y-auto py-1">
+                        {players.filter(p => p.id !== selectedP1 && p.name.toLowerCase().includes(p2Search.toLowerCase())).map(p => (
+                          <li key={p.id} className={`px-3 py-2 cursor-pointer hover:bg-base-200 ${p.id === selectedP2 ? 'font-bold text-primary' : ''}`} onClick={() => { setSelectedP2(p.id); setSelectedP2Partner(null); setP2Open(false); setP2Search('') }}>{p.name}</li>
+                        ))}
+                        {selectedP2 && <li className="px-3 py-2 cursor-pointer hover:bg-base-200 text-gray-400 text-sm border-t border-base-200" onClick={() => { setSelectedP2(null); setSelectedP2Partner(null); setP2Open(false); setP2Search('') }}>✕ Wissen</li>}
+                      </ul>
+                    </div>
+                  )}
+                </div>
               </div>
               {selectedP2 && (
                 <div>
