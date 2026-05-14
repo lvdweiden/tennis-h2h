@@ -126,7 +126,7 @@ export default function AddMatchModal({ players, poules, onSave, onClose }: Prop
           <label className="label"><span className="label-text font-semibold">Sets</span></label>
           {sets.map((s, i) => (
             <div key={i} className="flex flex-wrap items-center gap-2 mb-1">
-              <span className="text-xs text-gray-500 w-12">{s.stb ? '🏆 Supertiebreak' : `Set ${i + 1}`}</span>
+              <span className="text-xs text-gray-500">{s.stb ? '' : `Set ${i + 1}`}</span>
               <input type="number" min="0" max={s.stb ? 99 : 7} className="input input-bordered input-sm w-16 text-center" placeholder="0" value={s.p1} onChange={e => updateSet(i, 'p1', e.target.value)} />
               <span className="font-bold">-</span>
               <input type="number" min="0" max={s.stb ? 99 : 7} className="input input-bordered input-sm w-16 text-center" placeholder="0" value={s.p2} onChange={e => updateSet(i, 'p2', e.target.value)} />
