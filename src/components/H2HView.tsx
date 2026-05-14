@@ -458,7 +458,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
                           <span className={`font-semibold text-sm ${winnerTeam === 'team2' ? 'text-green-600' : 'text-gray-500'}`}>{team2}</span>
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          {parsedSets.map((s, i) => <span key={i} className="mr-2">{s[0]}-{s[1]}{s[2] === 1 ? <span className="text-xs text-orange-500 ml-0.5">STB</span> : null}</span>)}
+                          {parsedSets.map((s, i) => <span key={i} className="mr-2">{s[0]}-{s[1]}{s[2] === 1 ? <span className="text-xs text-orange-500 ml-0.5">Supertiebreak</span> : null}</span>)}
                         </div>
                       </div>
                       {isUnlocked && <button onClick={() => setEditingMatch(m)} className="btn btn-ghost btn-xs ml-2">✏️</button>}
