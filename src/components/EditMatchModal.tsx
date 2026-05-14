@@ -121,10 +121,13 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
               <input type="number" min="0" max={s.stb ? 99 : 7} className="input input-bordered input-sm w-16 text-center" value={s.p1} onChange={e => updateSet(i, 'p1', e.target.value)} />
               <span className="font-bold">-</span>
               <input type="number" min="0" max={s.stb ? 99 : 7} className="input input-bordered input-sm w-16 text-center" value={s.p2} onChange={e => updateSet(i, 'p2', e.target.value)} />
-              <label className="flex items-center gap-1 text-xs cursor-pointer ml-1">
-                <input type="checkbox" className="checkbox checkbox-xs" checked={s.stb} onChange={() => toggleStb(i)} />
-                <span className="text-gray-500">Supertiebreak</span>
-              </label>
+              <button
+                type="button"
+                onClick={() => toggleStb(i)}
+                className={`btn btn-xs rounded-full border px-3 transition-colors ${s.stb ? 'bg-orange-500 border-orange-500 text-white' : 'bg-white border-gray-300 text-gray-500 hover:border-orange-400 hover:text-orange-500'}`}
+              >
+                🏆 Supertiebreak
+              </button>
               {sets.length > 1 && <button onClick={() => removeSet(i)} className="btn btn-ghost btn-xs text-red-500">✕</button>}
             </div>
           ))}
