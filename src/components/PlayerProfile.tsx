@@ -3,6 +3,9 @@ import type { Player, Match, PlayerProfile } from '../types'
 import { SURFACE_COLORS } from '../types'
 import { upsertProfile } from '../supabase'
 
+const formatDate = (d: string) => { const [y,m,day] = d.split('-'); return `${day}-${m}-${y}`; }
+
+
 const MASTER_PIN = '2729'
 
 const AVATAR_COLORS = [
@@ -612,7 +615,7 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
                             <span className={`font-semibold ${winnerTeam === 'team2' ? 'text-green-600' : 'text-gray-500'}`}>{team2}</span>
                           </div>
                           <div className="text-xs text-gray-400 flex gap-2 flex-wrap">
-                            <span>{m.date}</span>
+                            <span>{formatDate(m.date)}</span>
                             {m.surface && <span className={`badge badge-xs ${SURFACE_COLORS[m.surface] || 'badge-neutral'}`}>{m.surface}</span>}
                             {m.location && <span>📍 {m.location}</span>}
                           </div>

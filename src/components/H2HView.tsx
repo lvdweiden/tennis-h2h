@@ -3,6 +3,9 @@ import type { Match, Player, Poule } from '../types'
 import { SURFACES, SURFACE_COLORS } from '../types'
 import EditMatchModal from './EditMatchModal'
 
+const formatDate = (d: string) => { const [y,m,day] = d.split('-'); return `${day}-${m}-${y}`; }
+
+
 interface Props {
   players: Player[]
   matches: Match[]
@@ -450,7 +453,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
                         <div className="flex items-center gap-2 flex-wrap">
                           {m.match_type === 'doubles' && <span className="badge badge-xs badge-secondary">Dubbel</span>}
                           {m.surface && <span className={`badge badge-xs ${SURFACE_COLORS[m.surface] || 'badge-neutral'}`}>{m.surface}</span>}
-                          <span className="text-xs text-gray-400">{m.date}</span>
+                          <span className="text-xs text-gray-400">{formatDate(m.date)}</span>
                           {m.location && <span className="text-xs text-gray-400">📍 {m.location}</span>}
                         </div>
                         <div className="mt-1">
@@ -505,7 +508,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
                   {poule && <span className="badge badge-sm badge-outline">{poule.name}</span>}
                 </div>
                 <div className="text-sm text-gray-500 dark:text-gray-400 flex gap-4 flex-wrap">
-                  <span>📅 {dm.date}</span>
+                  <span>📅 {formatDate(dm.date)}</span>
                   {dm.location && <span>📍 {dm.location}</span>}
                 </div>
                 <div className="border-t pt-3">

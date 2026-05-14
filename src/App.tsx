@@ -7,6 +7,9 @@ import AddMatchModal from './components/AddMatchModal'
 import H2HView from './components/H2HView'
 import PlayerProfile from './components/PlayerProfile'
 
+const formatDate = (d: string) => { const [y,m,day] = d.split('-'); return `${day}-${m}-${y}`; }
+
+
 const PIN = '2729'
 
 // Dark mode: volg automatisch systeeminstellingen
@@ -426,7 +429,7 @@ export default function App() {
                             <div className="flex items-center gap-2 flex-wrap mb-1">
                               {m.match_type === 'doubles' && <span className="badge badge-xs badge-secondary">Dubbel</span>}
                               {m.surface && <span className={`badge badge-xs ${SURFACE_COLORS[m.surface] || 'badge-neutral'}`}>{m.surface}</span>}
-                              <span className="text-xs text-gray-400">{m.date}</span>
+                              <span className="text-xs text-gray-400">{formatDate(m.date)}</span>
                               {m.location && <span className="text-xs text-gray-400">📍 {m.location}</span>}
                             </div>
                             <div className="text-sm">
