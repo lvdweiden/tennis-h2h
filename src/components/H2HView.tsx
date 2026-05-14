@@ -31,6 +31,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
   const [selectedP2Partner, setSelectedP2Partner] = useState<number | null>(null)
   const [filter, setFilter] = useState<FilterType>('all')
   const [editingMatch, setEditingMatch] = useState<Match | null>(null)
+  const [detailMatch, setDetailMatch] = useState<Match | null>(null)
 
   const relevantMatches = matches.filter(m => {
     if (!selectedP1 || !selectedP2 || selectedP1 === selectedP2) return false
@@ -442,7 +443,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
               const parsedSets = parseSets(m.sets)
 
               return (
-                <div key={m.id} className={`card shadow-sm border-l-4 ${p1won ? 'border-l-blue-500' : 'border-l-red-400'}`}>
+                <div key={m.id} className={`card shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-shadow ${p1won ? 'border-l-blue-500' : 'border-l-red-400'}`} onClick={() => setDetailMatch(m)}>
                   <div className="card-body py-3 px-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -461,7 +462,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
                           {parsedSets.map((s, i) => <span key={i} className="mr-2">{s[0]}-{s[1]}{s[2] === 1 ? <span className="text-xs text-orange-500 ml-0.5">Supertiebreak</span> : null}</span>)}
                         </div>
                       </div>
-                      {isUnlocked && <button onClick={() => setEditingMatch(m)} className="btn btn-ghost btn-xs ml-2">✏️</button>}
+
                     </div>
                   </div>
                 </div>
@@ -477,6 +478,74 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
           <p>Kies twee spelers om hun H2H te bekijken</p>
         </div>
       ) : null}
+
+      {/* Match Detail Modal */}
+      {detailMatch && (() => {
+        const dm = detailMatch
+        const ps = parseSets(dm.sets)
+        const p1n = getPlayerName(players, dm.player1_id)
+        const p2n = getPlayerName(players, dm.player2_id)
+        const t1p2n = dm.team1_player2_id ? getPlayerName(players, dm.team1_player2_id) : null
+        const t2p2n = dm.team2_player2_id ? getPlayerName(players, dm.team2_player2_id) : null
+        const dTeam1 = dm.match_type === 'doubles' && t1p2n ? `${p1n} & ${t1p2n}` : p1n
+        const dTeam2 = dm.match_type === 'doubles' && t2p2n ? `${p2n} & ${t2p2n}` : p2n
+        const winnerTeam = dm.winner_id === dm.player1_id ? 'team1' : 'team2'
+        const poule = poules.find(p => p.id === dm.poule_id)
+        return (
+          <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDetailMatch(null)}>
+            <div className="bg-white dark:bg-gray-800 rounded-2xl shadow-2xl max-w-sm w-full p-6" onClick={e => e.stopPropagation()}>
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-bold text-gray-800 dark:text-white">🎾 Wedstrijd details</h3>
+                <button onClick={() => setDetailMatch(null)} className="text-gray-400 hover:text-gray-600 text-xl leading-none">✕</button>
+              </div>
+              <div className="space-y-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {dm.match_type === 'doubles' && <span className="badge badge-secondary badge-sm">Dubbel</span>}
+                  {dm.surface && <span className={`badge badge-sm ${SURFACE_COLORS[dm.surface] || 'badge-neutral'}`}>{dm.surface}</span>}
+                  {poule && <span className="badge badge-sm badge-outline">{poule.name}</span>}
+                </div>
+                <div className="text-sm text-gray-500 dark:text-gray-400 flex gap-4 flex-wrap">
+                  <span>📅 {dm.date}</span>
+                  {dm.location && <span>📍 {dm.location}</span>}
+                </div>
+                <div className="border-t pt-3">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className={`font-bold text-base ${winnerTeam === 'team1' ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
+                      {winnerTeam === 'team1' ? '🏆 ' : ''}{dTeam1}
+                    </span>
+                    <span className="text-xs text-gray-400">{winnerTeam === 'team1' ? 'gewonnen' : ''}</span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className={`font-bold text-base ${winnerTeam === 'team2' ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
+                      {winnerTeam === 'team2' ? '🏆 ' : ''}{dTeam2}
+                    </span>
+                    <span className="text-xs text-gray-400">{winnerTeam === 'team2' ? 'gewonnen' : ''}</span>
+                  </div>
+                </div>
+                <div className="border-t pt-3">
+                  <p className="text-xs text-gray-400 mb-2 font-medium uppercase tracking-wide">Sets</p>
+                  <div className="flex gap-2 flex-wrap">
+                    {ps.map((s, i) => (
+                      <div key={i} className="text-center">
+                        <div className={`text-lg font-bold ${(winnerTeam === 'team1' ? s[0] > s[1] : s[1] > s[0]) ? 'text-green-600' : 'text-gray-400'}`}>
+                          {s[0]}–{s[1]}
+                        </div>
+                        {s[2] === 1 && <div className="text-xs text-orange-500">Supertiebreak</div>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+              {isUnlocked && (
+                <div className="flex gap-2 mt-4 pt-4 border-t">
+                  <button onClick={() => { setDetailMatch(null); onEditMatch(dm); }} className="btn btn-sm btn-outline flex-1">✏️ Bewerken</button>
+                  <button onClick={() => { setDetailMatch(null); onDeleteMatch(dm.id); }} className="btn btn-sm btn-error btn-outline flex-1">🗑️ Verwijderen</button>
+                </div>
+              )}
+            </div>
+          </div>
+        )
+      })()}
     </div>
   )
 }
