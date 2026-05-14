@@ -538,7 +538,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
               </div>
               {isUnlocked && (
                 <div className="flex gap-2 mt-4 pt-4 border-t">
-                  <button onClick={() => { setDetailMatch(null); onEditMatch(dm); }} className="btn btn-sm btn-outline flex-1">✏️ Bewerken</button>
+                  <button onClick={() => { setDetailMatch(null); setEditingMatch(dm); }} className="btn btn-sm btn-outline flex-1">✏️ Bewerken</button>
                   <button onClick={() => { setDetailMatch(null); onDeleteMatch(dm.id); }} className="btn btn-sm btn-error btn-outline flex-1">🗑️ Verwijderen</button>
                 </div>
               )}
