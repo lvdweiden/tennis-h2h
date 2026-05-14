@@ -158,7 +158,7 @@ export default function App() {
   const [newPouleName, setNewPouleName] = useState('')
   const [expandedPoule, setExpandedPoule] = useState<number | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{
-    type: 'poule' | 'player', id: number, name: string, pinInput: string, pinError: boolean
+    type: 'poule' | 'player' | 'match', id: number, name: string, pinInput: string, pinError: boolean
   } | null>(null)
 
   const loadData = async () => {
@@ -212,6 +212,11 @@ export default function App() {
       await deletePoule(deleteConfirm.id)
       setPoules(prev => prev.filter(p => p.id !== deleteConfirm.id))
       if (selectedPoule === deleteConfirm.id) setSelectedPoule(null)
+    } else if (deleteConfirm.type === 'match') {
+      setSaving(true)
+      await supabase.from('tennis_matches').delete().eq('id', deleteConfirm.id)
+      await loadData()
+      setSaving(false)
     } else {
       await supabase.from('tennis_players').delete().eq('id', deleteConfirm.id)
       await loadData()
@@ -266,11 +271,10 @@ export default function App() {
     setSaving(false)
   }
 
-  const handleDeleteMatch = async (id: number) => {
-    setSaving(true)
-    await supabase.from('tennis_matches').delete().eq('id', id)
-    await loadData()
-    setSaving(false)
+  const handleDeleteMatch = (id: number) => {
+    const match = matches.find(m => m.id === id)
+    const name = match ? match.date : 'wedstrijd'
+    setDeleteConfirm({ type: 'match', id, name, pinInput: '', pinError: false })
   }
 
   const handleAddPlayer = async () => {
