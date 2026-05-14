@@ -147,7 +147,7 @@ export default function AddMatchModal({ players, poules, onSave, onClose }: Prop
           <div className="flex gap-2">
             {[{ key: 'team1', label: team1Label }, { key: 'team2', label: team2Label }].map(opt => (
               <button key={opt.key} onClick={() => setWinner(opt.key as 'team1' | 'team2')}
-                className={`btn btn-sm flex-1 ${winner === opt.key ? 'btn-success text-white' : 'btn-outline'}`}>
+                className={`btn btn-sm flex-1 ${winner === opt.key ? 'bg-green-600 border-green-600 text-white font-bold' : 'btn-outline'}`}>
                 🏆 {opt.label || (opt.key === 'team1' ? 'Team 1' : 'Team 2')}
               </button>
             ))}

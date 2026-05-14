@@ -138,7 +138,7 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
           <div className="flex gap-2">
             {[{ key: 'team1', label: team1Label }, { key: 'team2', label: team2Label }].map(opt => (
               <button key={opt.key} onClick={() => setWinner(opt.key as 'team1' | 'team2')}
-                className={`btn btn-sm flex-1 ${winner === opt.key ? 'btn-success text-white' : 'btn-outline'}`}>
+                className={`btn btn-sm flex-1 ${winner === opt.key ? 'bg-green-600 border-green-600 text-white font-bold' : 'btn-outline'}`}>
                 🏆 {opt.label}
               </button>
             ))}
