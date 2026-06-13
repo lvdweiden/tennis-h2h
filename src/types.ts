@@ -16,6 +16,7 @@ export interface Match {
   team1_player2_id: number | null
   team2_player2_id: number | null
   poule_id: number | null
+  notes?: string | null
 }
 
 export interface Poule {

@@ -547,6 +547,11 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
                   <span>📅 {formatDate(dm.date)}</span>
                   {dm.location && <span>📍 {dm.location}</span>}
                 </div>
+                {dm.notes && (
+                  <div className="mt-2 px-3 py-2 rounded-lg bg-base-200 text-sm text-gray-600 dark:text-gray-300 italic">
+                    💬 {dm.notes}
+                  </div>
+                )}
                 <div className="border-t pt-3">
                   <div className="flex items-center justify-between mb-1">
                     <span className={`font-bold text-base ${winnerTeam === 'team1' ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>

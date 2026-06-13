@@ -22,6 +22,7 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
   const [sets, setSets] = useState(parsedSets.map(s => ({ p1: String(s[0]), p2: String(s[1]), stb: s[2] === 1 })))
   const [surface, setSurface] = useState(match.surface || 'Kunstgras')
   const [location, setLocation] = useState(match.location || '')
+  const [notes, setNotes] = useState(match.notes || '')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [pouleId, setPouleId] = useState<number | null>(match.poule_id ?? null)
 
@@ -49,6 +50,7 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
       team1_player2_id: match.match_type === 'doubles' ? (team1p2 ? parseInt(team1p2) : null) : null,
       team2_player2_id: match.match_type === 'doubles' ? (team2p2 ? parseInt(team2p2) : null) : null,
       poule_id: pouleId,
+      notes: notes.trim() || null,
     })
   }
 
@@ -158,6 +160,10 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
         <div className="form-control mb-4">
           <label className="label"><span className="label-text font-semibold">Locatie</span></label>
           <input type="text" className="input input-bordered" placeholder="bijv. E.T.V. de Helster" value={location} onChange={e => setLocation(e.target.value)} />
+        </div>
+        <div className="form-control">
+          <label className="label"><span className="label-text font-semibold">💬 Opmerking <span className="text-gray-400 font-normal">(optioneel)</span></span></label>
+          <textarea className="textarea textarea-bordered w-full" rows={2} placeholder="bijv. Geweldige finale!" value={notes} onChange={e => setNotes(e.target.value)} />
         </div>
         {poules.length > 0 && (
           <div className="form-control mb-4">

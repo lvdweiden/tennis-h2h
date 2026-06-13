@@ -17,6 +17,7 @@ interface Props {
     team1_player2_id: number | null
     team2_player2_id: number | null
     poule_id: number | null
+    notes?: string | null
   }) => void
   onClose: () => void
 }
@@ -32,6 +33,7 @@ export default function AddMatchModal({ players, poules, onSave, onClose }: Prop
   const [sets, setSets] = useState([{ p1: '', p2: '', stb: false }])
   const [surface, setSurface] = useState('Kunstgras')
   const [location, setLocation] = useState('')
+  const [notes, setNotes] = useState('')
   const [pouleId, setPouleId] = useState<number | null>(null)
 
   const addSet = () => setSets([...sets, { p1: '', p2: '', stb: false }])
@@ -62,6 +64,7 @@ export default function AddMatchModal({ players, poules, onSave, onClose }: Prop
       team1_player2_id: matchType === 'doubles' ? parseInt(team1p2) : null,
       team2_player2_id: matchType === 'doubles' ? parseInt(team2p2) : null,
       poule_id: pouleId,
+      notes: notes.trim() || null,
     })
   }
 
@@ -167,6 +170,10 @@ export default function AddMatchModal({ players, poules, onSave, onClose }: Prop
         <div className="form-control mb-4">
           <label className="label"><span className="label-text font-semibold">Locatie</span></label>
           <input type="text" className="input input-bordered" placeholder="bijv. E.T.V. de Helster" value={location} onChange={e => setLocation(e.target.value)} />
+        </div>
+        <div className="form-control">
+          <label className="label"><span className="label-text font-semibold">💬 Opmerking <span className="text-gray-400 font-normal">(optioneel)</span></span></label>
+          <textarea className="textarea textarea-bordered w-full" rows={2} placeholder="bijv. Geweldige finale!" value={notes} onChange={e => setNotes(e.target.value)} />
         </div>
         {poules.length > 0 && (
           <div className="form-control mb-4">
