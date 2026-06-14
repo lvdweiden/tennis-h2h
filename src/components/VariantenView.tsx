@@ -63,7 +63,7 @@ function SearchDrop({ players, selected, onSelect, placeholder, exclude }: Searc
         className="input input-bordered w-full flex items-center justify-between cursor-pointer text-sm px-3 py-2 h-auto min-h-[2.5rem]"
         onClick={() => { setOpen(o => !o); setSearch('') }}
       >
-        <span className={selected ? 'font-semibold text-gray-900' : 'text-gray-400'}>{selected ? selected.name : placeholder}</span>
+        <span className={selected ? 'font-semibold text-white' : 'text-gray-400'}>{selected ? selected.name : placeholder}</span>
         <span className="text-gray-400 ml-1">▾</span>
       </div>
       {open && (
@@ -76,7 +76,7 @@ function SearchDrop({ players, selected, onSelect, placeholder, exclude }: Searc
           )}
           {filtered.length === 0 && <div className="px-3 py-2 text-sm text-gray-400">Geen spelers gevonden</div>}
           {filtered.map(p => (
-            <button key={p.id} className={`w-full text-left px-3 py-2 text-sm hover:bg-green-50 ${selected?.id === p.id ? 'bg-green-100 font-semibold' : ''}`}
+            <button key={p.id} className={`w-full text-left px-3 py-2 text-sm text-gray-800 hover:bg-green-50 ${selected?.id === p.id ? 'bg-green-100 font-semibold' : ''}`}
               onClick={() => { onSelect(p); setOpen(false); setSearch('') }}>
               {p.name}
             </button>
