@@ -96,6 +96,7 @@ interface Props {
 export default function VariantenView({ players, isUnlocked, onRequestUnlock }: Props) {
   const [variants, setVariants] = useState<Variant[]>([])
   const [matches, setMatches] = useState<VariantMatch[]>([])
+  const [showMatches, setShowMatches] = useState(false)
   const [selectedVariant, setSelectedVariant] = useState<Variant | null>(null)
   const [loading, setLoading] = useState(true)
   const [playerA, setPlayerA] = useState<Player | null>(null)
@@ -135,6 +136,9 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
   }, [])
 
   const variantMatches = selectedVariant ? matches.filter(m => m.variant_id === selectedVariant.id) : []
+
+  // Reset showMatches when players change
+  useEffect(() => { setShowMatches(false) }, [playerA?.id, playerB?.id])
 
   const h2hMatches = (playerA && playerB)
     ? variantMatches.filter(m =>
@@ -266,14 +270,20 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
 
             {/* H2H record */}
             {playerA && playerB && (
-              <div className="flex items-center justify-center gap-6 py-3 px-4 bg-gray-50 rounded-xl mb-4">
+              <div
+                className="flex items-center justify-center gap-6 py-3 px-4 bg-gray-50 rounded-xl mb-4 cursor-pointer hover:bg-gray-100 transition-colors select-none"
+                onClick={() => h2hMatches.length > 0 && setShowMatches(s => !s)}
+              >
                 <div className="text-center">
                   <div className="text-2xl font-black text-green-600">{winsA}</div>
                   <div className="text-xs text-gray-500 font-medium">{playerA.name.split(' ')[0]}</div>
                 </div>
-                <div className="text-center">
+                <div className="text-center flex flex-col items-center">
                   <div className="text-xs text-gray-400 font-medium">{h2hMatches.length} gespeeld</div>
                   <div className="text-lg font-bold text-gray-400">–</div>
+                  {h2hMatches.length > 0 && (
+                    <div className="text-xs text-gray-400 mt-1">{showMatches ? '▲ verberg' : '▼ toon'}</div>
+                  )}
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-black text-green-600">{winsB}</div>
@@ -288,6 +298,7 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
                 {playerA && playerB ? `Nog geen wedstrijden tussen ${playerA.name.split(' ')[0]} en ${playerB.name.split(' ')[0]}` : 'Nog geen wedstrijden'}
               </div>
             )}
+            {showMatches && (
             <div className="space-y-2">
               {h2hMatches.map(m => {
                 const p1 = players.find(p => p.id === m.player1_id)
@@ -315,6 +326,7 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
                 )
               })}
             </div>
+            )}
           </div>
         </div>
       )}
