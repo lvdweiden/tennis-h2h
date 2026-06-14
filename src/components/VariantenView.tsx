@@ -145,7 +145,7 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
         (m.player1_id === playerA.id && m.player2_id === playerB.id) ||
         (m.player1_id === playerB.id && m.player2_id === playerA.id)
       )
-    : variantMatches
+    : []
 
   const winsA = playerA ? h2hMatches.filter(m => m.winner_id === playerA.id).length : 0
   const winsB = playerB ? h2hMatches.filter(m => m.winner_id === playerB.id).length : 0
@@ -293,11 +293,15 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
             )}
 
             {/* Match list */}
-            {h2hMatches.length === 0 && (
+            {!playerA || !playerB ? (
               <div className="text-center text-gray-400 py-6 text-sm">
-                {playerA && playerB ? `Nog geen wedstrijden tussen ${playerA.name.split(' ')[0]} en ${playerB.name.split(' ')[0]}` : 'Nog geen wedstrijden'}
+                Kies twee spelers om het H2H record te zien
               </div>
-            )}
+            ) : h2hMatches.length === 0 ? (
+              <div className="text-center text-gray-400 py-6 text-sm">
+                Nog geen wedstrijden tussen {playerA.name.split(' ')[0]} en {playerB.name.split(' ')[0]}
+              </div>
+            ) : null}
             {showMatches && (
             <div className="space-y-2">
               {h2hMatches.map(m => {
