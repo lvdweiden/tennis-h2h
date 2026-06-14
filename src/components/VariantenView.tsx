@@ -63,7 +63,7 @@ function SearchDrop({ players, selected, onSelect, placeholder, exclude }: Searc
         className="input input-bordered w-full flex items-center justify-between cursor-pointer text-sm px-3 py-2 h-auto min-h-[2.5rem]"
         onClick={() => { setOpen(o => !o); setSearch('') }}
       >
-        <span className={selected ? 'font-semibold text-white' : 'text-gray-400'}>{selected ? selected.name : placeholder}</span>
+        <span className={selected ? 'font-semibold text-gray-900 dark:text-white' : 'text-gray-400'}>{selected ? selected.name : placeholder}</span>
         <span className="text-gray-400 ml-1">▾</span>
       </div>
       {open && (
