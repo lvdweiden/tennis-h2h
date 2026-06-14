@@ -276,7 +276,7 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
               >
                 <div className="text-center">
                   <div className="text-2xl font-black text-green-600">{winsA}</div>
-                  <div className="text-xs text-gray-500 font-medium">{playerA.name.split(' ')[0]}</div>
+                  <div className="text-sm font-bold text-gray-800 dark:text-gray-100">{playerA.name.split(' ')[0]}</div>
                 </div>
                 <div className="text-center flex flex-col items-center">
                   <div className="text-xs text-gray-400 font-medium">{h2hMatches.length} gespeeld</div>
@@ -287,7 +287,7 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
                 </div>
                 <div className="text-center">
                   <div className="text-2xl font-black text-green-600">{winsB}</div>
-                  <div className="text-xs text-gray-500 font-medium">{playerB.name.split(' ')[0]}</div>
+                  <div className="text-sm font-bold text-gray-800 dark:text-gray-100">{playerB.name.split(' ')[0]}</div>
                 </div>
               </div>
             )}
