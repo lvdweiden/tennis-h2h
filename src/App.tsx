@@ -5,6 +5,7 @@ import type { Player, Match, PlayerProfile as TPlayerProfile, Poule } from './ty
 import { SURFACE_COLORS } from './types'
 import AddMatchModal from './components/AddMatchModal'
 import H2HView from './components/H2HView'
+import VariantenView from './components/VariantenView'
 import PlayerProfile from './components/PlayerProfile'
 
 const formatDate = (d: string) => { const [y,m,day] = d.split('-'); return `${day}-${m}-${y}`; }
@@ -26,7 +27,7 @@ function useDarkMode() {
   }, [])
 }
 
-type Tab = 'h2h' | 'uitslagen' | 'matrix'
+type Tab = 'h2h' | 'uitslagen' | 'matrix' | 'varianten'
 type SortKey = 'name' | 'wins' | 'losses' | 'winpct'
 
 function MatrixView({ players, matches }: { players: Player[], matches: Match[] }) {
@@ -344,7 +345,7 @@ export default function App() {
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex">
-            {([['h2h','🎾 H2H'], ['matrix','📊 Matrix'], ['uitslagen','📋 Uitslagen']] as [Tab, string][]).map(([t, l]) => (
+            {([['h2h','🎾 H2H'], ['matrix','📊 Matrix'], ['uitslagen','📋 Uitslagen'], ['varianten','🎮 Varianten']] as [Tab, string][]).map(([t, l]) => (
               <button key={t} onClick={() => setTab(t)}
                 className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${tab === t ? 'border-green-600 text-green-700' : 'border-transparent text-gray-600 hover:text-gray-900'}`}>
                 {l}
@@ -379,6 +380,7 @@ export default function App() {
         ) : (
           <>
             {tab === 'h2h' && <H2HView players={filteredPlayers} matches={filteredMatches} poules={poules} onEditMatch={handleEditMatch} onDeleteMatch={handleDeleteMatch} isUnlocked={isUnlocked} />}
+            {tab === 'varianten' && <VariantenView players={players} isUnlocked={isUnlocked} onRequestUnlock={() => { setShowPinModal(true); setPinError(false); setPinInput('') }} />}
             {tab === 'matrix' && (
               selectedPlayer ? (
                 <PlayerProfile
