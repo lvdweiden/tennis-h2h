@@ -282,6 +282,12 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
   const [newVariantScoreType, setNewVariantScoreType] = useState<ScoreType>('winner_only')
   const [newVariantTarget, setNewVariantTarget] = useState('')
 
+  // Delete variant modal
+  const [showDeleteVariant, setShowDeleteVariant] = useState(false)
+  const [deleteVariantPin, setDeleteVariantPin] = useState('')
+  const [deleteVariantPinError, setDeleteVariantPinError] = useState(false)
+  const [deletingVariant, setDeletingVariant] = useState(false)
+
   useEffect(() => {
     async function load() {
       const [{ data: vData }, { data: mData }] = await Promise.all([
@@ -374,6 +380,22 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
     setDeletePinError(false)
   }
 
+  async function handleDeleteVariant() {
+    if (deleteVariantPin !== PIN) { setDeleteVariantPinError(true); return }
+    if (!selectedVariant) return
+    setDeletingVariant(true)
+    await supabase.from('tennis_variant_matches').delete().eq('variant_id', selectedVariant.id)
+    await supabase.from('tennis_variants').delete().eq('id', selectedVariant.id)
+    const remaining = variants.filter(v => v.id !== selectedVariant.id)
+    setVariants(remaining)
+    setMatches(prev => prev.filter(m => m.variant_id !== selectedVariant.id))
+    setSelectedVariant(remaining.length > 0 ? remaining[0] : null)
+    setShowDeleteVariant(false)
+    setDeleteVariantPin('')
+    setDeleteVariantPinError(false)
+    setDeletingVariant(false)
+  }
+
   async function handleAddVariant() {
     if (!newVariantName.trim()) return
     const target = newVariantScoreType === 'score_to_x' && newVariantTarget ? parseInt(newVariantTarget) : null
@@ -434,10 +456,20 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
       {/* Variant tabs */}
       <div className="flex items-center gap-2 mb-4 flex-wrap">
         {variants.map(v => (
-          <button key={v.id} onClick={() => setSelectedVariant(v)}
-            className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${selectedVariant?.id === v.id ? 'bg-green-700 text-white border-green-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
-            {v.name}
-          </button>
+          <div key={v.id} className="flex items-center gap-1">
+            <button onClick={() => setSelectedVariant(v)}
+              className={`px-4 py-2 rounded-full text-sm font-semibold border transition-colors ${selectedVariant?.id === v.id ? 'bg-green-700 text-white border-green-700' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}>
+              {v.name}
+            </button>
+            {isUnlocked && selectedVariant?.id === v.id && (
+              <button
+                onClick={() => { setShowDeleteVariant(true); setDeleteVariantPin(''); setDeleteVariantPinError(false) }}
+                className="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-200 text-xs"
+                title="Variant verwijderen">
+                🗑️
+              </button>
+            )}
+          </div>
         ))}
         {isUnlocked && (
           <button onClick={() => setShowAddVariant(true)}
@@ -776,6 +808,38 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
           </div>
         )
       })()}
+
+      {/* Delete variant modal */}
+      {showDeleteVariant && selectedVariant && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-sm" style={{ background: '#fff', color: '#111' }}>
+            <h3 className="font-bold text-lg mb-1 text-center">🗑️ Variant verwijderen</h3>
+            <p className="text-sm text-center mb-1" style={{ color: '#555' }}>
+              Weet je zeker dat je <strong>{selectedVariant.name}</strong> wilt verwijderen?
+            </p>
+            <p className="text-xs text-center mb-4 text-red-500">
+              Alle wedstrijden van deze variant worden ook verwijderd.
+            </p>
+            <input
+              type="password"
+              inputMode="numeric"
+              className={`input input-bordered w-full text-center text-2xl tracking-widest mb-2 ${deleteVariantPinError ? 'input-error' : ''}`}
+              placeholder="••••"
+              value={deleteVariantPin}
+              onChange={e => { setDeleteVariantPin(e.target.value); setDeleteVariantPinError(false) }}
+              maxLength={4}
+            />
+            {deleteVariantPinError && <p className="text-error text-sm text-center mb-2">Onjuiste pincode</p>}
+            <div className="flex gap-2 mt-2">
+              <button onClick={() => setShowDeleteVariant(false)} className="btn btn-ghost flex-1">Annuleren</button>
+              <button onClick={handleDeleteVariant} disabled={!deleteVariantPin || deletingVariant} className="btn btn-error flex-1">
+                {deletingVariant ? 'Bezig...' : 'Verwijderen'}
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setShowDeleteVariant(false)}></div>
+        </div>
+      )}
 
       {/* Add variant modal */}
       {showAddVariant && (
