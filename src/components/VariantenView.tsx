@@ -284,6 +284,10 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
 
   // Delete variant modal
   const [showDeleteVariant, setShowDeleteVariant] = useState(false)
+  const [showEditVariant, setShowEditVariant] = useState(false)
+  const [editScoreType, setEditScoreType] = useState<ScoreType>('winner_only')
+  const [editTargetScore, setEditTargetScore] = useState('')
+  const [savingVariant, setSavingVariant] = useState(false)
   const [deleteVariantPin, setDeleteVariantPin] = useState('')
   const [deleteVariantPinError, setDeleteVariantPinError] = useState(false)
   const [deletingVariant, setDeletingVariant] = useState(false)
@@ -396,6 +400,25 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
     setDeletingVariant(false)
   }
 
+  async function handleEditVariant() {
+    if (!selectedVariant) return
+    setSavingVariant(true)
+    const target = editScoreType === 'score_to_x' && editTargetScore ? parseInt(editTargetScore) : null
+    const { data, error } = await supabase
+      .from('tennis_variants')
+      .update({ score_type: editScoreType, target_score: target })
+      .eq('id', selectedVariant.id)
+      .select()
+      .single()
+    setSavingVariant(false)
+    if (!error && data) {
+      const updated = { ...data, score_type: data.score_type || 'winner_only' }
+      setVariants(vs => vs.map(v => v.id === updated.id ? updated : v))
+      setSelectedVariant(updated)
+    }
+    setShowEditVariant(false)
+  }
+
   async function handleAddVariant() {
     if (!newVariantName.trim()) return
     const target = newVariantScoreType === 'score_to_x' && newVariantTarget ? parseInt(newVariantTarget) : null
@@ -462,12 +485,20 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
               {v.name}
             </button>
             {isUnlocked && selectedVariant?.id === v.id && (
-              <button
-                onClick={() => { setShowDeleteVariant(true); setDeleteVariantPin(''); setDeleteVariantPinError(false) }}
-                className="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-200 text-xs"
-                title="Variant verwijderen">
-                🗑️
-              </button>
+              <div className="flex gap-1">
+                <button
+                  onClick={() => { setEditScoreType(v.score_type || 'winner_only'); setEditTargetScore(v.target_score ? String(v.target_score) : ''); setShowEditVariant(true) }}
+                  className="w-6 h-6 flex items-center justify-center rounded-full bg-blue-100 hover:bg-blue-200 text-xs"
+                  title="Scoreformaat bewerken">
+                  ✏️
+                </button>
+                <button
+                  onClick={() => { setShowDeleteVariant(true); setDeleteVariantPin(''); setDeleteVariantPinError(false) }}
+                  className="w-6 h-6 flex items-center justify-center rounded-full bg-red-100 hover:bg-red-200 text-xs"
+                  title="Variant verwijderen">
+                  🗑️
+                </button>
+              </div>
             )}
           </div>
         ))}
@@ -808,6 +839,36 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
           </div>
         )
       })()}
+
+      {/* Edit variant score type modal */}
+      {showEditVariant && selectedVariant && (
+        <div className="modal modal-open">
+          <div className="modal-box max-w-sm" style={{ background: '#fff', color: '#111' }}>
+            <h3 className="font-bold text-lg mb-3 text-center">✏️ Scoreformaat: {selectedVariant.name}</h3>
+            <div className="mb-3">
+              <label className="label label-text text-sm font-semibold">Scoreformaat</label>
+              <select className="select select-bordered w-full" value={editScoreType} onChange={e => setEditScoreType(e.target.value as ScoreType)}>
+                <option value="winner_only">Alleen winnaar</option>
+                <option value="score_to_x">Score (getal)</option>
+                <option value="sets">Sets</option>
+              </select>
+            </div>
+            {editScoreType === 'score_to_x' && (
+              <div className="mb-3">
+                <label className="label label-text text-sm font-semibold">Winscore (optioneel)</label>
+                <input type="number" min={1} max={999} className="input input-bordered w-full" placeholder="bijv. 10" value={editTargetScore} onChange={e => setEditTargetScore(e.target.value)} />
+              </div>
+            )}
+            <div className="flex gap-2 mt-4">
+              <button onClick={() => setShowEditVariant(false)} className="btn btn-ghost flex-1">Annuleren</button>
+              <button onClick={handleEditVariant} disabled={savingVariant} className="btn bg-blue-600 text-white hover:bg-blue-700 border-0 flex-1">
+                {savingVariant ? 'Bezig...' : 'Opslaan'}
+              </button>
+            </div>
+          </div>
+          <div className="modal-backdrop" onClick={() => setShowEditVariant(false)}></div>
+        </div>
+      )}
 
       {/* Delete variant modal */}
       {showDeleteVariant && selectedVariant && (
