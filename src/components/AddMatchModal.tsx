@@ -30,15 +30,15 @@ export default function AddMatchModal({ players, poules, onSave, onClose }: Prop
   const [team1p2, setTeam1p2] = useState('')
   const [team2p2, setTeam2p2] = useState('')
   const [winner, setWinner] = useState<'team1' | 'team2' | ''>('')
-  const [sets, setSets] = useState([{ p1: '', p2: '', stb: false }])
+  const [sets, setSets] = useState([{ p1: '', p2: '', stb: false, tb1: '', tb2: '' }])
   const [surface, setSurface] = useState('Kunstgras')
   const [location, setLocation] = useState('')
   const [notes, setNotes] = useState('')
   const [pouleId, setPouleId] = useState<number | null>(null)
 
-  const addSet = () => setSets([...sets, { p1: '', p2: '', stb: false }])
+  const addSet = () => setSets([...sets, { p1: '', p2: '', stb: false, tb1: '', tb2: '' }])
   const removeSet = (i: number) => setSets(sets.filter((_, idx) => idx !== i))
-  const updateSet = (i: number, key: 'p1' | 'p2', val: string) => {
+  const updateSet = (i: number, key: 'p1' | 'p2' | 'tb1' | 'tb2', val: string) => {
     const s = [...sets]; s[i] = { ...s[i], [key]: val }; setSets(s)
   }
   const toggleStb = (i: number) => {
@@ -48,7 +48,18 @@ export default function AddMatchModal({ players, poules, onSave, onClose }: Prop
   const handleSave = () => {
     if (!player1 || !player2 || !winner || !date) return
     if (matchType === 'doubles' && (!team1p2 || !team2p2)) return
-    const setsData = sets.map(s => s.stb ? [parseInt(s.p1) || 0, parseInt(s.p2) || 0, 1] : [parseInt(s.p1) || 0, parseInt(s.p2) || 0])
+    const setsData = sets.map(s => {
+      const p1g = parseInt(s.p1) || 0
+      const p2g = parseInt(s.p2) || 0
+      if (s.stb) return [p1g, p2g, 1]
+      if (p1g === 6 && p2g === 6 && s.tb1 !== '' && s.tb2 !== '') {
+        const tb1 = parseInt(s.tb1) || 0
+        const tb2 = parseInt(s.tb2) || 0
+        if (tb1 > tb2) return [7, 6, tb1, tb2]
+        if (tb2 > tb1) return [6, 7, tb1, tb2]
+      }
+      return [p1g, p2g]
+    })
     const p1id = parseInt(player1)
     const p2id = parseInt(player2)
     const winnerId = winner === 'team1' ? p1id : p2id
@@ -128,7 +139,8 @@ export default function AddMatchModal({ players, poules, onSave, onClose }: Prop
         <div className="form-control mb-3">
           <label className="label"><span className="label-text font-semibold">Sets</span></label>
           {sets.map((s, i) => (
-            <div key={i} className="flex flex-wrap items-center gap-2 mb-1">
+            <div key={i}>
+            <div className="flex flex-wrap items-center gap-2 mb-1">
               <span className="text-xs text-gray-500">{s.stb ? '' : `Set ${i + 1}`}</span>
               <input type="number" min="0" max={s.stb ? 99 : 7} className="input input-bordered input-sm w-16 text-center" placeholder="0" value={s.p1} onChange={e => updateSet(i, 'p1', e.target.value)} />
               <span className="font-bold">-</span>
@@ -141,6 +153,15 @@ export default function AddMatchModal({ players, poules, onSave, onClose }: Prop
                 🏆 Supertiebreak
               </button>
               {sets.length > 1 && <button onClick={() => removeSet(i)} className="btn btn-ghost btn-xs text-red-500">✕</button>}
+            </div>
+            {parseInt(s.p1) === 6 && parseInt(s.p2) === 6 && !s.stb && (
+              <div className="flex items-center gap-1 mt-1 ml-6">
+                <span className="text-xs text-gray-500">Tiebreak:</span>
+                <input type="number" min="0" max="99" className="input input-bordered input-sm w-14 text-center" placeholder="0" value={s.tb1} onChange={e => updateSet(i, 'tb1', e.target.value)} />
+                <span className="font-bold">-</span>
+                <input type="number" min="0" max="99" className="input input-bordered input-sm w-14 text-center" placeholder="0" value={s.tb2} onChange={e => updateSet(i, 'tb2', e.target.value)} />
+              </div>
+            )}
             </div>
           ))}
           <button onClick={addSet} className="btn btn-ghost btn-xs mt-1 self-start">+ Set toevoegen</button>

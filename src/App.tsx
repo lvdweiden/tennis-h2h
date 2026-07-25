@@ -440,7 +440,7 @@ export default function App() {
                               <span className={`font-semibold ${winnerTeam === 'team2' ? 'text-green-600' : 'text-gray-500'}`}>{team2}</span>
                             </div>
                             <div className="text-xs text-gray-400 mt-1">
-                              {sets.map((s, i) => <span key={i} className="mr-2">{s[0]}-{s[1]}</span>)}
+                              {sets.map((s, i) => <span key={i} className="mr-2">{s.length === 4 ? `${s[0]}-${s[1]}(${Math.min(s[2],s[3])})` : `${s[0]}-${s[1]}`}</span>)}
                             </div>
                           </div>
                         </div>

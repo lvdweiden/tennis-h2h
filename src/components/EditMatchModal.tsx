@@ -19,16 +19,16 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
   const [team1p2, setTeam1p2] = useState(match.team1_player2_id ? String(match.team1_player2_id) : '')
   const [team2p2, setTeam2p2] = useState(match.team2_player2_id ? String(match.team2_player2_id) : '')
   const [winner, setWinner] = useState<'team1' | 'team2'>(match.winner_id === match.player1_id ? 'team1' : 'team2')
-  const [sets, setSets] = useState(parsedSets.map(s => ({ p1: String(s[0]), p2: String(s[1]), stb: s[2] === 1 })))
+  const [sets, setSets] = useState(parsedSets.map(s => ({ p1: s.length === 4 ? '6' : String(s[0]), p2: s.length === 4 ? '6' : String(s[1]), stb: s.length === 3 && s[2] === 1, tb1: s.length === 4 ? String(s[2]) : '', tb2: s.length === 4 ? String(s[3]) : '' })))
   const [surface, setSurface] = useState(match.surface || 'Kunstgras')
   const [location, setLocation] = useState(match.location || '')
   const [notes, setNotes] = useState(match.notes || '')
   const [confirmDelete, setConfirmDelete] = useState(false)
   const [pouleId, setPouleId] = useState<number | null>(match.poule_id ?? null)
 
-  const addSet = () => setSets([...sets, { p1: '', p2: '', stb: false }])
+  const addSet = () => setSets([...sets, { p1: '', p2: '', stb: false, tb1: '', tb2: '' }])
   const removeSet = (i: number) => setSets(sets.filter((_, idx) => idx !== i))
-  const updateSet = (i: number, key: 'p1' | 'p2', val: string) => {
+  const updateSet = (i: number, key: 'p1' | 'p2' | 'tb1' | 'tb2', val: string) => {
     const s = [...sets]; s[i] = { ...s[i], [key]: val }; setSets(s)
   }
   const toggleStb = (i: number) => {
@@ -36,7 +36,18 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
   }
 
   const handleSave = () => {
-    const setsData = sets.map(s => s.stb ? [parseInt(s.p1) || 0, parseInt(s.p2) || 0, 1] : [parseInt(s.p1) || 0, parseInt(s.p2) || 0])
+    const setsData = sets.map(s => {
+      const p1g = parseInt(s.p1) || 0
+      const p2g = parseInt(s.p2) || 0
+      if (s.stb) return [p1g, p2g, 1]
+      if (p1g === 6 && p2g === 6 && s.tb1 !== '' && s.tb2 !== '') {
+        const tb1 = parseInt(s.tb1) || 0
+        const tb2 = parseInt(s.tb2) || 0
+        if (tb1 > tb2) return [7, 6, tb1, tb2]
+        if (tb2 > tb1) return [6, 7, tb1, tb2]
+      }
+      return [p1g, p2g]
+    })
     const p1id = parseInt(player1)
     const p2id = parseInt(player2)
     onSave(match.id, {
@@ -118,7 +129,8 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
         <div className="form-control mb-3">
           <label className="label"><span className="label-text font-semibold">Sets</span></label>
           {sets.map((s, i) => (
-            <div key={i} className="flex flex-wrap items-center gap-2 mb-1">
+            <div key={i}>
+            <div className="flex flex-wrap items-center gap-2 mb-1">
               <span className="text-xs text-gray-500">{s.stb ? '' : `Set ${i + 1}`}</span>
               <input type="number" min="0" max={s.stb ? 99 : 7} className="input input-bordered input-sm w-16 text-center" value={s.p1} onChange={e => updateSet(i, 'p1', e.target.value)} />
               <span className="font-bold">-</span>
@@ -131,6 +143,15 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
                 🏆 Supertiebreak
               </button>
               {sets.length > 1 && <button onClick={() => removeSet(i)} className="btn btn-ghost btn-xs text-red-500">✕</button>}
+            </div>
+            {parseInt(s.p1) === 6 && parseInt(s.p2) === 6 && !s.stb && (
+              <div className="flex items-center gap-1 mt-1 ml-6">
+                <span className="text-xs text-gray-500">Tiebreak:</span>
+                <input type="number" min="0" max="99" className="input input-bordered input-sm w-14 text-center" placeholder="0" value={s.tb1} onChange={e => updateSet(i, 'tb1', e.target.value)} />
+                <span className="font-bold">-</span>
+                <input type="number" min="0" max="99" className="input input-bordered input-sm w-14 text-center" placeholder="0" value={s.tb2} onChange={e => updateSet(i, 'tb2', e.target.value)} />
+              </div>
+            )}
             </div>
           ))}
           <button onClick={addSet} className="btn btn-ghost btn-xs mt-1 self-start">+ Set toevoegen</button>
