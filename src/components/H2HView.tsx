@@ -498,7 +498,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
                           <span className={`font-semibold text-sm ${winnerTeam === 'team2' ? 'text-green-600' : 'text-gray-500'}`}>{team2}</span>
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
-                          {parsedSets.map((s, i) => <span key={i} className="mr-2">{s[0]}-{s[1]}{s[2] === 1 ? <span className="text-xs text-orange-500 ml-0.5">Supertiebreak</span> : null}</span>)}
+                          {parsedSets.map((s, i) => <span key={i} className="mr-2">{s[0]}-{s[1]}{s[2] === 1 ? <span className="text-xs text-orange-500 ml-0.5">Supertiebreak</span> : s.length === 4 ? <span className="text-xs text-gray-500">({Math.min(s[2],s[3])})</span> : null}</span>)}
                         </div>
                       </div>
 
@@ -574,7 +574,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
                         <div className={`text-lg font-bold ${(winnerTeam === 'team1' ? s[0] > s[1] : s[1] > s[0]) ? 'text-green-600' : 'text-gray-400'}`}>
                           {s[0]}–{s[1]}
                         </div>
-                        {s[2] === 1 && <div className="text-xs text-orange-500">Supertiebreak</div>}
+                        {s[2] === 1 ? <div className="text-xs text-orange-500">Supertiebreak</div> : s.length === 4 ? <div className="text-xs text-gray-500">Tiebreak: {s[2]}-{s[3]}</div> : null}
                       </div>
                     ))}
                   </div>
