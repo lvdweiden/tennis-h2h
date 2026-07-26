@@ -95,7 +95,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
       const [t1, t2, isStb] = set
       const myGames = p1inTeam1 ? t1 : t2
       const oppGames = p1inTeam1 ? t2 : t1
-      if (!isStb) { p1Games += myGames; p2Games += oppGames }
+      if (!isStb || set.length === 4) { p1Games += myGames; p2Games += oppGames }
       if (myGames > oppGames) p1Sets++
       else if (oppGames > myGames) p2Sets++
     })
