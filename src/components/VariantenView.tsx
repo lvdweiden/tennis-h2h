@@ -950,6 +950,43 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
           <div className="modal-backdrop" onClick={() => setShowAddVariant(false)}></div>
         </div>
       )}
+
+      {/* Algemeen uitslagen overzicht */}
+      {matches.length > 0 && (
+        <div className="mt-8">
+          <h2 className="font-bold text-lg mb-3 text-gray-900 dark:text-white">📋 Alle Variant Uitslagen</h2>
+          <div className="space-y-2">
+            {[...matches].sort((a, b) => b.date.localeCompare(a.date)).map(m => {
+              const v = variants.find(vv => vv.id === m.variant_id)
+              const p1 = players.find(p => p.id === m.player1_id)?.name || '?'
+              const p2 = players.find(p => p.id === m.player2_id)?.name || '?'
+              const p1wins = m.winner_id === m.player1_id
+              const scoreType = v?.score_type || 'winner_only'
+              const sc = m.score as any
+              let scoreStr = ''
+              if (scoreType === 'score_to_x' && sc) scoreStr = `${sc.p1 ?? ''}-${sc.p2 ?? ''}`
+              else if (scoreType === 'sets' && sc?.sets) scoreStr = (sc.sets as number[][]).map((s: number[]) => `${s[0]}-${s[1]}`).join('  ')
+              return (
+                <div key={m.id} className="card bg-base-100 shadow-sm border-l-4 border-l-purple-500">
+                  <div className="card-body py-3 px-4">
+                    <div className="flex items-center gap-2 flex-wrap mb-1">
+                      {v && <span className="badge badge-xs badge-secondary">{v.name}</span>}
+                      <span className="text-xs text-gray-400">{formatDate(m.date)}</span>
+                      {m.location && <span className="text-xs text-gray-400">📍 {m.location}</span>}
+                    </div>
+                    <div className="text-sm">
+                      <span className={`font-semibold ${p1wins ? 'text-green-600' : 'text-gray-500'}`}>{p1}</span>
+                      <span className="text-gray-400 mx-2">vs</span>
+                      <span className={`font-semibold ${!p1wins ? 'text-green-600' : 'text-gray-500'}`}>{p2}</span>
+                    </div>
+                    {scoreStr && <div className="text-xs text-gray-400 mt-1">{scoreStr}</div>}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </div>
+      )}
     </div>
   )
 }
