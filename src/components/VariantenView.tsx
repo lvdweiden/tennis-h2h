@@ -964,8 +964,12 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
               const scoreType = v?.score_type || 'winner_only'
               const sc = m.score as any
               let scoreStr = ''
-              if (scoreType === 'score_to_x' && sc) scoreStr = `${sc.p1 ?? ''}-${sc.p2 ?? ''}`
-              else if (scoreType === 'sets' && sc?.sets) scoreStr = (sc.sets as number[][]).map((s: number[]) => `${s[0]}-${s[1]}`).join('  ')
+              if (sc !== null && sc !== undefined && Array.isArray(sc)) {
+                if (scoreType === 'sets') scoreStr = (sc as number[][]).map((s: number[]) => `${s[0]}-${s[1]}`).join('  ')
+                else scoreStr = `${sc[0]}-${sc[1]}`
+              } else if (sc !== null && sc !== undefined && typeof sc === 'object') {
+                if (sc.p1 !== undefined) scoreStr = `${sc.p1}-${sc.p2}`
+              }
               return (
                 <div key={m.id} className="card bg-base-100 shadow-sm border-l-4 border-l-purple-500">
                   <div className="card-body py-3 px-4">
