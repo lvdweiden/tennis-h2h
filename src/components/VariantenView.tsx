@@ -974,7 +974,7 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
                 <div key={m.id} className={`card bg-base-100 shadow-sm border-l-4 ${(['border-l-purple-500','border-l-blue-500','border-l-green-500','border-l-orange-500','border-l-pink-500','border-l-red-500','border-l-teal-500'])[variants.findIndex(x=>x.id===m.variant_id)%7]}`}>
                   <div className="card-body py-3 px-4">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
-                      {v && <span className="badge badge-xs text-white" style={{backgroundColor:(['#7c3aed','#2563eb','#16a34a','#ea580c','#db2777','#dc2626','#0d9488'][variants.indexOf(v)%7]}}>{v.name}</span>}
+                      {v && <span className="badge badge-xs text-white" style={{backgroundColor:['#7c3aed','#2563eb','#16a34a','#ea580c','#db2777','#dc2626','#0d9488'][variants.indexOf(v)%7]}}>{v.name}</span>}
                       <span className="text-xs text-gray-400">{formatDate(m.date)}</span>
                       {m.location && <span className="text-xs text-gray-400">📍 {m.location}</span>}
                     </div>
