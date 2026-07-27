@@ -971,7 +971,7 @@ export default function VariantenView({ players, isUnlocked, onRequestUnlock }: 
                 if (sc.p1 !== undefined) scoreStr = `${sc.p1}-${sc.p2}`
               }
               return (
-                <div key={m.id} className="card bg-base-100 shadow-sm border-l-4 border-l-purple-500">
+                <div key={m.id} className={`card bg-base-100 shadow-sm border-l-4 ${(['border-l-purple-500','border-l-blue-500','border-l-green-500','border-l-orange-500','border-l-pink-500','border-l-red-500','border-l-teal-500'])[variants.findIndex(x=>x.id===m.variant_id)%7]}`}>
                   <div className="card-body py-3 px-4">
                     <div className="flex items-center gap-2 flex-wrap mb-1">
                       {v && <span className="badge badge-xs badge-secondary">{v.name}</span>}
