@@ -89,7 +89,8 @@ function StatsView({ players, matches, onSelectPlayer }: { players: Player[], ma
       const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
       const sets: number[][] = (() => { try { return JSON.parse(m.sets) } catch { return [] } })()
       sets.forEach((set) => {
-        const [t1, t2, isStb] = set
+        const t1 = set[0], t2 = set[1]
+        const isStb = set.length === 3 && set[2] === 1
         const myGames = inTeam1 ? t1 : t2
         const oppGames = inTeam1 ? t2 : t1
         if (!isStb) { gamesWon += myGames; gamesLost += oppGames }
