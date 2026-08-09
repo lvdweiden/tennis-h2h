@@ -160,6 +160,7 @@ export default function App() {
   const [poules, setPoules] = useState<Poule[]>([])
   const [selectedPoule, setSelectedPoule] = useState<number | null>(null)
   const [showManagePoules, setShowManagePoules] = useState(false)
+  const [uitFilter, setUitFilter] = useState<{player: string, surface: string, type: string}>({player:'', surface:'', type:''})
   const [newPouleName, setNewPouleName] = useState('')
   const [expandedPoule, setExpandedPoule] = useState<number | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -413,8 +414,43 @@ export default function App() {
             {tab === 'uitslagen' && (
               <div className="space-y-2">
                 <h2 className="font-bold text-lg mb-3 text-gray-900">📋 Alle Uitslagen</h2>
-                {filteredMatches.length === 0 && <div className="text-center text-gray-400 py-8">Nog geen wedstrijden</div>}
-                {filteredMatches.map(m => {
+                {/* Filters */}
+                <div className="flex flex-wrap gap-2 mb-3">
+                  <select className="select select-bordered select-sm" value={uitFilter.player} onChange={e => setUitFilter(f => ({...f, player: e.target.value}))}>
+                    <option value="">Alle spelers</option>
+                    {players.map(p => <option key={p.id} value={String(p.id)}>{p.name}</option>)}
+                  </select>
+                  <select className="select select-bordered select-sm" value={uitFilter.surface} onChange={e => setUitFilter(f => ({...f, surface: e.target.value}))}>
+                    <option value="">Alle ondergronden</option>
+                    {['kunstgras','gravel','smashcourt','hardcourt binnen','hardcourt buiten'].map(s => <option key={s} value={s}>{s}</option>)}
+                  </select>
+                  <select className="select select-bordered select-sm" value={uitFilter.type} onChange={e => setUitFilter(f => ({...f, type: e.target.value}))}>
+                    <option value="">Enkel + Dubbel</option>
+                    <option value="singles">Enkel</option>
+                    <option value="doubles">Dubbel</option>
+                  </select>
+                  {(uitFilter.player || uitFilter.surface || uitFilter.type) && (
+                    <button className="btn btn-xs btn-ghost" onClick={() => setUitFilter({player:'', surface:'', type:''})}>✕ Reset</button>
+                  )}
+                </div>
+                {filteredMatches.filter(m => {
+                  if (uitFilter.player) {
+                    const pid = Number(uitFilter.player)
+                    if (![m.player1_id, m.player2_id, m.team1_player2_id, m.team2_player2_id].includes(pid)) return false
+                  }
+                  if (uitFilter.surface && m.surface !== uitFilter.surface) return false
+                  if (uitFilter.type && m.match_type !== uitFilter.type) return false
+                  return true
+                }).length === 0 && <div className="text-center text-gray-400 py-8">Geen wedstrijden gevonden</div>}
+                {filteredMatches.filter(m => {
+                  if (uitFilter.player) {
+                    const pid = Number(uitFilter.player)
+                    if (![m.player1_id, m.player2_id, m.team1_player2_id, m.team2_player2_id].includes(pid)) return false
+                  }
+                  if (uitFilter.surface && m.surface !== uitFilter.surface) return false
+                  if (uitFilter.type && m.match_type !== uitFilter.type) return false
+                  return true
+                }).map(m => {
                   const p1 = players.find(p => p.id === m.player1_id)?.name || '?'
                   const p2 = players.find(p => p.id === m.player2_id)?.name || '?'
                   const tp1 = m.team1_player2_id ? ` & ${players.find(p => p.id === m.team1_player2_id)?.name || '?'}` : ''
