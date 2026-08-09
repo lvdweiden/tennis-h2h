@@ -422,7 +422,7 @@ export default function App() {
                   </select>
                   <select className="select select-bordered select-sm" value={uitFilter.surface} onChange={e => setUitFilter(f => ({...f, surface: e.target.value}))}>
                     <option value="">Alle ondergronden</option>
-                    {['kunstgras','gravel','smashcourt','hardcourt binnen','hardcourt buiten'].map(s => <option key={s} value={s}>{s}</option>)}
+                    {['Kunstgras','Gravel','Smashcourt','Hardcourt binnen','Hardcourt buiten'].map(s => <option key={s} value={s}>{s}</option>)}
                   </select>
                   <select className="select select-bordered select-sm" value={uitFilter.type} onChange={e => setUitFilter(f => ({...f, type: e.target.value}))}>
                     <option value="">Enkel + Dubbel</option>
