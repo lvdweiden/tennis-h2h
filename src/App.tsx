@@ -250,7 +250,12 @@ export default function App() {
     setIsUnlocked(false)
   }
 
-  const filteredMatches = selectedPoule !== null ? matches.filter(m => m.poule_id === selectedPoule) : matches
+  const filteredMatches = selectedPoule !== null
+    ? matches.filter(m => {
+        const ids = poules.find(po => po.id === selectedPoule)?.player_ids ?? []
+        return ids.includes(m.player1_id) && ids.includes(m.player2_id)
+      })
+    : matches
   const filteredPlayers = selectedPoule !== null
     ? players.filter(p => poules.find(po => po.id === selectedPoule)?.player_ids?.includes(p.id) ?? false)
     : players
