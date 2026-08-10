@@ -186,23 +186,7 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
           <label className="label"><span className="label-text font-semibold">💬 Opmerking <span className="text-gray-400 font-normal">(optioneel)</span></span></label>
           <textarea className="textarea textarea-bordered w-full" rows={2} placeholder="bijv. Geweldige finale!" value={notes} onChange={e => setNotes(e.target.value)} />
         </div>
-        {poules.length > 0 && (
-          <div className="form-control mb-4">
-            <label className="label"><span className="label-text font-semibold">Poule (optioneel)</span></label>
-            <div className="flex flex-wrap gap-2">
-              <button onClick={() => setPouleId(null)}
-                className={`btn btn-sm ${pouleId === null ? 'btn-primary' : 'btn-outline'}`}>
-                Geen poule
-              </button>
-              {poules.map(p => (
-                <button key={p.id} onClick={() => setPouleId(p.id)}
-                  className={`btn btn-sm ${pouleId === p.id ? 'btn-primary' : 'btn-outline'}`}>
-                  {p.name}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
+
         <div className="modal-action justify-between">
           <div>
             {!confirmDelete ? (
