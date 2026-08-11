@@ -1,17 +1,16 @@
 import { useState } from 'react'
-import type { Match, Player, Poule } from '../types'
+import type { Match, Player } from '../types'
 import { SURFACES, SURFACE_COLORS } from '../types'
 
 interface Props {
   match: Match
   players: Player[]
-  poules: Poule[]
   onSave: (id: number, updates: Partial<Match>) => void
   onDelete: (id: number) => void
   onClose: () => void
 }
 
-export default function EditMatchModal({ match, players, poules, onSave, onDelete, onClose }: Props) {
+export default function EditMatchModal({ match, players, onSave, onDelete, onClose }: Props) {
   const parsedSets: number[][] = (() => { try { return JSON.parse(match.sets) } catch { return [[0,0]] } })()
   const [date, setDate] = useState(match.date)
   const [player1, setPlayer1] = useState(String(match.player1_id))
@@ -24,8 +23,6 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
   const [location, setLocation] = useState(match.location || '')
   const [notes, setNotes] = useState(match.notes || '')
   const [confirmDelete, setConfirmDelete] = useState(false)
-  const [pouleId, setPouleId] = useState<number | null>(match.poule_id ?? null)
-
   const addSet = () => setSets([...sets, { p1: '', p2: '', stb: false, tb1: '', tb2: '' }])
   const removeSet = (i: number) => setSets(sets.filter((_, idx) => idx !== i))
   const updateSet = (i: number, key: 'p1' | 'p2' | 'tb1' | 'tb2', val: string) => {
@@ -60,7 +57,7 @@ export default function EditMatchModal({ match, players, poules, onSave, onDelet
       location,
       team1_player2_id: match.match_type === 'doubles' ? (team1p2 ? parseInt(team1p2) : null) : null,
       team2_player2_id: match.match_type === 'doubles' ? (team2p2 ? parseInt(team2p2) : null) : null,
-      poule_id: pouleId,
+      poule_id: match.poule_id ?? null,
       notes: notes.trim() || null,
     })
   }

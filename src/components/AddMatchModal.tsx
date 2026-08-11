@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import type { Player, Poule } from '../types'
+import type { Player } from '../types'
 import { SURFACES, SURFACE_COLORS } from '../types'
 
 interface Props {
   players: Player[]
-  poules: Poule[]
   onSave: (match: {
     date: string
     player1_id: number
@@ -22,7 +21,7 @@ interface Props {
   onClose: () => void
 }
 
-export default function AddMatchModal({ players, poules, onSave, onClose }: Props) {
+export default function AddMatchModal({ players, onSave, onClose }: Props) {
   const [matchType, setMatchType] = useState<'singles' | 'doubles'>('singles')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [player1, setPlayer1] = useState('')
@@ -34,8 +33,6 @@ export default function AddMatchModal({ players, poules, onSave, onClose }: Prop
   const [surface, setSurface] = useState('Kunstgras')
   const [location, setLocation] = useState('')
   const [notes, setNotes] = useState('')
-  const [pouleId, setPouleId] = useState<number | null>(null)
-
   const addSet = () => setSets([...sets, { p1: '', p2: '', stb: false, tb1: '', tb2: '' }])
   const removeSet = (i: number) => setSets(sets.filter((_, idx) => idx !== i))
   const updateSet = (i: number, key: 'p1' | 'p2' | 'tb1' | 'tb2', val: string) => {
@@ -74,7 +71,7 @@ export default function AddMatchModal({ players, poules, onSave, onClose }: Prop
       match_type: matchType,
       team1_player2_id: matchType === 'doubles' ? parseInt(team1p2) : null,
       team2_player2_id: matchType === 'doubles' ? parseInt(team2p2) : null,
-      poule_id: pouleId,
+      poule_id: null,
       notes: notes.trim() || null,
     })
   }

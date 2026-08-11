@@ -527,7 +527,6 @@ export default function App() {
       {showAddMatch && (
         <AddMatchModal
           players={players}
-          poules={poules}
           onSave={handleAddMatch}
           onClose={() => setShowAddMatch(false)}
         />

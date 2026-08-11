@@ -213,7 +213,6 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
         <EditMatchModal
           match={editingMatch}
           players={players}
-          poules={poules}
           onSave={(id, updates) => { onEditMatch(id, updates); setEditingMatch(null) }}
           onDelete={(id) => { onDeleteMatch(id); setEditingMatch(null) }}
           onClose={() => setEditingMatch(null)}
