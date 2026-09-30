@@ -81,6 +81,7 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
   const doublesMatches = myMatches.filter(m => m.match_type === 'doubles')
 
   function isWin(m: Match): boolean {
+    if (m.winner_id == null) return false
     const inTeam1 = m.player1_id === player.id || m.team1_player2_id === player.id
     const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
     return inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
@@ -143,6 +144,7 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
   const allStats = players.map(p => {
     const pm = matches.filter(m => [m.player1_id, m.player2_id, m.team1_player2_id, m.team2_player2_id].includes(p.id))
     const pw = pm.filter(m => {
+      if (m.winner_id == null) return false
       const inTeam1 = m.player1_id === p.id || m.team1_player2_id === p.id
       const wt = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
       return inTeam1 ? wt === 'team1' : wt === 'team2'
