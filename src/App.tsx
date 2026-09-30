@@ -61,11 +61,13 @@ function MatrixView({ players, matches }: { players: Player[], matches: Match[] 
                            (team2.includes(p1.id) && team1.includes(p2.id))
                   })
                   const w = h2h.filter(m => {
+                    if (m.winner_id == null) return false
                     const p1inTeam1 = m.player1_id === p1.id || m.team1_player2_id === p1.id
-                    const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
+                    const winnerTeam: 'team1' | 'team2' | null = m.winner_id == null ? null : (m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2')
                     return p1inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
                   }).length
-                  const l = h2h.length - w
+                  const noW = h2h.filter(m => m.winner_id == null).length
+                  const l = h2h.length - w - noW
                   if (h2h.length === 0) return <td key={p2.id} className="border border-base-300 text-center text-gray-300 text-xs">-</td>
                   const bg = w > l ? 'bg-green-50 text-green-700' : w < l ? 'bg-red-50 text-red-700' : 'bg-yellow-50 text-yellow-700'
                   return <td key={p2.id} className={`border border-base-300 text-center text-xs font-bold ${bg}`}>{w}-{l}</td>
@@ -96,6 +98,7 @@ function StatsView({ players, matches, onSelectPlayer }: { players: Player[], ma
         if (!isStb) { gamesWon += myGames; gamesLost += oppGames }
         if (myGames > oppGames) setsWon++; else setsLost++
       })
+      if (m.winner_id == null) return false
       return inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
     }).length
     return { player: p, wins, losses: myMatches.length - wins, total: myMatches.length, pct: myMatches.length ? Math.round(wins / myMatches.length * 100) : 0, setsWon, setsLost, gamesWon, gamesLost }
@@ -462,7 +465,7 @@ export default function App() {
                   const tp2 = m.team2_player2_id ? ` & ${players.find(p => p.id === m.team2_player2_id)?.name || '?'}` : ''
                   const team1 = p1 + tp1
                   const team2 = p2 + tp2
-                  const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
+                  const winnerTeam: 'team1' | 'team2' | null = m.winner_id == null ? null : (m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2')
                   const sets: number[][] = (() => { try { return JSON.parse(m.sets) } catch { return [] } })()
                   
                   return (
@@ -480,6 +483,7 @@ export default function App() {
                               <span className={`font-semibold ${winnerTeam === 'team1' ? 'text-green-600' : 'text-gray-500'}`}>{team1}</span>
                               <span className="text-gray-400 mx-2">vs</span>
                               <span className={`font-semibold ${winnerTeam === 'team2' ? 'text-green-600' : 'text-gray-500'}`}>{team2}</span>
+                              {winnerTeam === null && <span className="ml-2 text-xs text-gray-400">🤝 geen winnaar</span>}
                             </div>
                             <div className="text-xs text-gray-400 mt-1">
                               {sets.map((s, i) => <span key={i} className="mr-2">{s.length === 4 ? `${s[0]}-${s[1]}(${Math.min(s[2],s[3])})` : `${s[0]}-${s[1]}`}</span>)}

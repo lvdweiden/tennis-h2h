@@ -17,7 +17,7 @@ export default function EditMatchModal({ match, players, onSave, onDelete, onClo
   const [player2, setPlayer2] = useState(String(match.player2_id))
   const [team1p2, setTeam1p2] = useState(match.team1_player2_id ? String(match.team1_player2_id) : '')
   const [team2p2, setTeam2p2] = useState(match.team2_player2_id ? String(match.team2_player2_id) : '')
-  const [winner, setWinner] = useState<'team1' | 'team2'>(match.winner_id === match.player1_id ? 'team1' : 'team2')
+  const [winner, setWinner] = useState<'team1' | 'team2' | 'none'>(match.winner_id == null ? 'none' : match.winner_id === match.player1_id ? 'team1' : 'team2')
   const [sets, setSets] = useState(parsedSets.map(s => ({ p1: s.length === 4 ? '6' : String(s[0]), p2: s.length === 4 ? '6' : String(s[1]), stb: s.length === 3 && s[2] === 1, tb1: s.length === 4 ? String(s[2]) : '', tb2: s.length === 4 ? String(s[3]) : '' })))
   const [surface, setSurface] = useState(match.surface || 'Kunstgras')
   const [location, setLocation] = useState(match.location || '')
@@ -51,7 +51,7 @@ export default function EditMatchModal({ match, players, onSave, onDelete, onClo
       date,
       player1_id: p1id,
       player2_id: p2id,
-      winner_id: winner === 'team1' ? p1id : p2id,
+      winner_id: winner === 'team1' ? p1id : winner === 'team2' ? p2id : null,
       sets: JSON.stringify(setsData),
       surface,
       location,
@@ -162,6 +162,12 @@ export default function EditMatchModal({ match, players, onSave, onDelete, onClo
                 🏆 {opt.label}
               </button>
             ))}
+          </div>
+          <div className="mt-1">
+            <button onClick={() => setWinner(winner === 'none' ? 'team1' : 'none')}
+              className={`btn btn-sm btn-ghost text-xs ${winner === 'none' ? 'bg-gray-200 dark:bg-gray-600 font-bold' : 'opacity-60'}`}>
+              🤝 Geen winnaar
+            </button>
           </div>
         </div>
         <div className="form-control mb-3">

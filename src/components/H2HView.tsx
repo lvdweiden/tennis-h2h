@@ -80,11 +80,13 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
   })
 
   const p1wins = filteredMatches.filter(m => {
+    if (m.winner_id == null) return false
     const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
     const p1inTeam1 = m.player1_id === selectedP1 || m.team1_player2_id === selectedP1
     return p1inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
   }).length
-  const p2wins = filteredMatches.length - p1wins
+  const noWinnerCount = filteredMatches.filter(m => m.winner_id == null).length
+  const p2wins = filteredMatches.length - p1wins - noWinnerCount
 
   // Sets & games berekening
   let p1Sets = 0, p2Sets = 0, p1Games = 0, p2Games = 0
@@ -343,6 +345,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
                 <div className="text-center px-4">
                   <div className="text-2xl font-bold opacity-60">VS</div>
                   <div className="text-xs opacity-50 mt-1">{filteredMatches.length} wedstrijden</div>
+                  {noWinnerCount > 0 && <div className="text-xs opacity-50">🤝 {noWinnerCount}×</div>}
                 </div>
                 <div className="text-center flex-1">
                   <div className="text-4xl font-black transition-all duration-100">{animP2Wins}</div>
@@ -468,8 +471,8 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
             )}
             {filteredMatches.sort((a, b) => b.date.localeCompare(a.date)).map(m => {
               const p1inTeam1 = m.player1_id === selectedP1 || m.team1_player2_id === selectedP1
-              const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
-              const p1won = p1inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
+              const winnerTeam: 'team1' | 'team2' | null = m.winner_id == null ? null : (m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2')
+              const p1won = winnerTeam === null ? null : (p1inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2')
 
               const team1 = m.match_type === 'doubles'
                 ? `${getPlayerName(players, m.player1_id)} & ${getPlayerName(players, m.team1_player2_id)}`
@@ -481,7 +484,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
               const parsedSets = parseSets(m.sets)
 
               return (
-                <div key={m.id} className={`card shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-shadow ${p1won ? 'border-l-blue-500' : 'border-l-red-400'}`} onClick={() => setDetailMatch(m)}>
+                <div key={m.id} className={`card shadow-sm border-l-4 cursor-pointer hover:shadow-md transition-shadow ${p1won === null ? 'border-l-gray-400' : p1won ? 'border-l-blue-500' : 'border-l-red-400'}`} onClick={() => setDetailMatch(m)}>
                   <div className="card-body py-3 px-4">
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
@@ -495,6 +498,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
                           <span className={`font-semibold text-sm ${winnerTeam === 'team1' ? 'text-green-600' : 'text-gray-500'}`}>{team1}</span>
                           <span className="text-gray-400 mx-2 text-xs">vs</span>
                           <span className={`font-semibold text-sm ${winnerTeam === 'team2' ? 'text-green-600' : 'text-gray-500'}`}>{team2}</span>
+                          {winnerTeam === null && <span className="text-xs text-gray-400 ml-1">🤝 geen winnaar</span>}
                         </div>
                         <div className="text-xs text-gray-500 mt-1">
                           {parsedSets.map((s, i) => <span key={i} className="mr-2">{s[0]}-{s[1]}{s[2] === 1 ? <span className="text-xs text-orange-500 ml-0.5">Supertiebreak</span> : s.length === 4 ? <span className="text-xs text-gray-500">({Math.min(s[2],s[3])})</span> : null}</span>)}
@@ -527,7 +531,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
         const t2p2n = dm.team2_player2_id ? getPlayerName(players, dm.team2_player2_id) : null
         const dTeam1 = dm.match_type === 'doubles' && t1p2n ? `${p1n} & ${t1p2n}` : p1n
         const dTeam2 = dm.match_type === 'doubles' && t2p2n ? `${p2n} & ${t2p2n}` : p2n
-        const winnerTeam = dm.winner_id === dm.player1_id ? 'team1' : 'team2'
+        const winnerTeam: 'team1' | 'team2' | null = dm.winner_id == null ? null : (dm.winner_id === dm.player1_id || dm.winner_id === dm.team1_player2_id ? 'team1' : 'team2')
         const poule = poules.find(p => p.id === dm.poule_id)
         return (
           <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setDetailMatch(null)}>
@@ -556,7 +560,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
                     <span className={`font-bold text-base ${winnerTeam === 'team1' ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
                       {winnerTeam === 'team1' ? '🏆 ' : ''}{dTeam1}
                     </span>
-                    <span className="text-xs text-gray-400">{winnerTeam === 'team1' ? 'gewonnen' : ''}</span>
+                    <span className="text-xs text-gray-400">{winnerTeam === 'team1' ? 'gewonnen' : winnerTeam === null ? '🤝' : ''}</span>
                   </div>
                   <div className="flex items-center justify-between">
                     <span className={`font-bold text-base ${winnerTeam === 'team2' ? 'text-green-600' : 'text-gray-400 dark:text-gray-500'}`}>
@@ -570,7 +574,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
                   <div className="flex gap-2 flex-wrap">
                     {ps.map((s, i) => (
                       <div key={i} className="text-center">
-                        <div className={`text-lg font-bold ${(winnerTeam === 'team1' ? s[0] > s[1] : s[1] > s[0]) ? 'text-green-600' : 'text-gray-400'}`}>
+                        <div className={`text-lg font-bold ${winnerTeam === null ? 'text-gray-600' : (winnerTeam === 'team1' ? s[0] > s[1] : s[1] > s[0]) ? 'text-green-600' : 'text-gray-400'}`}>
                           {s[0]}–{s[1]}
                         </div>
                         {s[2] === 1 ? <div className="text-xs text-orange-500">Supertiebreak</div> : s.length === 4 ? <div className="text-xs text-gray-500">Tiebreak: {s[2]}-{s[3]}</div> : null}

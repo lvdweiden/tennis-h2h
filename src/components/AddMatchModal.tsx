@@ -8,7 +8,7 @@ interface Props {
     date: string
     player1_id: number
     player2_id: number
-    winner_id: number
+    winner_id: number | null
     sets: string
     surface: string
     location: string
@@ -28,7 +28,7 @@ export default function AddMatchModal({ players, onSave, onClose }: Props) {
   const [player2, setPlayer2] = useState('')
   const [team1p2, setTeam1p2] = useState('')
   const [team2p2, setTeam2p2] = useState('')
-  const [winner, setWinner] = useState<'team1' | 'team2' | ''>('')
+  const [winner, setWinner] = useState<'team1' | 'team2' | 'none' | ''>('')
   const [sets, setSets] = useState([{ p1: '', p2: '', stb: false, tb1: '', tb2: '' }])
   const [surface, setSurface] = useState('Kunstgras')
   const [location, setLocation] = useState('')
@@ -43,7 +43,7 @@ export default function AddMatchModal({ players, onSave, onClose }: Props) {
   }
 
   const handleSave = () => {
-    if (!player1 || !player2 || !winner || !date) return
+    if (!player1 || !player2 || !date) return
     if (matchType === 'doubles' && (!team1p2 || !team2p2)) return
     const setsData = sets.map(s => {
       const p1g = parseInt(s.p1) || 0
@@ -59,7 +59,7 @@ export default function AddMatchModal({ players, onSave, onClose }: Props) {
     })
     const p1id = parseInt(player1)
     const p2id = parseInt(player2)
-    const winnerId = winner === 'team1' ? p1id : p2id
+    const winnerId = winner === 'team1' ? p1id : winner === 'team2' ? p2id : null
     onSave({
       date,
       player1_id: p1id,
@@ -172,6 +172,12 @@ export default function AddMatchModal({ players, onSave, onClose }: Props) {
                 🏆 {opt.label || (opt.key === 'team1' ? 'Team 1' : 'Team 2')}
               </button>
             ))}
+          </div>
+          <div className="mt-1">
+            <button onClick={() => setWinner(winner === 'none' ? '' : 'none')}
+              className={`btn btn-sm btn-ghost text-xs ${winner === 'none' ? 'bg-gray-200 dark:bg-gray-600 font-bold' : 'opacity-60'}`}>
+              🤝 Geen winnaar
+            </button>
           </div>
         </div>
         <div className="form-control mb-3">
