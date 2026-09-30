@@ -8,7 +8,7 @@ export interface Match {
   date: string
   player1_id: number
   player2_id: number
-  winner_id: number
+  winner_id: number | null
   sets: string
   surface: string
   location: string
