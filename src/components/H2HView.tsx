@@ -109,11 +109,13 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
   const surfaceStats = SURFACES.map(s => {
     const sm = filteredMatches.filter(m => m.surface === s)
     const sw = sm.filter(m => {
+      if (m.winner_id == null) return false
       const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
       const p1inTeam1 = m.player1_id === selectedP1 || m.team1_player2_id === selectedP1
       return p1inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
     }).length
-    return { surface: s, total: sm.length, p1wins: sw, p2wins: sm.length - sw }
+    const decided = sm.filter(m => m.winner_id != null).length
+    return { surface: s, total: sm.length, p1wins: sw, p2wins: decided - sw }
   }).filter(s => s.total > 0)
 
   const p1 = players.find(p => p.id === selectedP1)
