@@ -121,7 +121,8 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
   const surfaceStats = surfaces.map(s => {
     const sm = myMatches.filter(m => m.surface === s)
     const sw = sm.filter(isWin).length
-    return { surface: s, played: sm.length, wins: sw, losses: sm.length - sw, pct: sm.length ? Math.round(sw / sm.length * 100) : 0 }
+    const decidedMatches = sm.filter(m => m.winner_id != null).length
+    return { surface: s, played: sm.length, wins: sw, losses: decidedMatches - sw, pct: decidedMatches ? Math.round(sw / decidedMatches * 100) : 0 }
   }).filter(s => s.played > 0)
 
   const favSurface = surfaceStats.length ? surfaceStats.reduce((a, b) => b.played > a.played ? b : a) : null

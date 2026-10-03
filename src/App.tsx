@@ -101,7 +101,8 @@ function StatsView({ players, matches, onSelectPlayer }: { players: Player[], ma
       if (m.winner_id == null) return false
       return inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
     }).length
-    return { player: p, wins, losses: myMatches.length - wins, total: myMatches.length, pct: myMatches.length ? Math.round(wins / myMatches.length * 100) : 0, setsWon, setsLost, gamesWon, gamesLost }
+    const decidedMatches = myMatches.filter(m => m.winner_id != null).length
+    return { player: p, wins, losses: decidedMatches - wins, total: myMatches.length, pct: decidedMatches ? Math.round(wins / decidedMatches * 100) : 0, setsWon, setsLost, gamesWon, gamesLost }
   }).sort((a, b) => {
     if (sortKey === 'name') return a.player.name.localeCompare(b.player.name)
     if (sortKey === 'wins') return b.wins - a.wins
