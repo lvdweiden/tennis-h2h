@@ -87,6 +87,13 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
     return inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
   }
 
+  function isLoss(m: Match): boolean {
+    return m.winner_id != null && !isWin(m)
+  }
+
+  const decidedMatches = myMatches.filter(m => m.winner_id != null)
+  const noWinnerCount = myMatches.length - decidedMatches.length
+
   // Top 3 dubbel partners
   const duoStats = players
     .filter(p => p.id !== player.id)
@@ -98,23 +105,25 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
                (t2.includes(player.id) && t2.includes(partner.id))
       })
       const wins = duoMatches.filter(isWin).length
-      return { partner, played: duoMatches.length, wins, losses: duoMatches.length - wins }
+      return { partner, played: duoMatches.length, wins, losses: duoMatches.filter(isLoss).length }
     })
     .filter(d => d.played > 0)
     .sort((a, b) => b.played - a.played)
     .slice(0, 3)
 
   const totalWins = myMatches.filter(isWin).length
-  const totalLosses = myMatches.length - totalWins
+  const totalLosses = myMatches.filter(isLoss).length
   const singlesWins = singlesMatches.filter(isWin).length
+  const singlesLosses = singlesMatches.filter(isLoss).length
   const doublesWins = doublesMatches.filter(isWin).length
-  const winPct = myMatches.length ? Math.round(totalWins / myMatches.length * 100) : 0
+  const doublesLosses = doublesMatches.filter(isLoss).length
+  const winPct = decidedMatches.length ? Math.round(totalWins / decidedMatches.length * 100) : 0
 
   const sortedByDate = [...myMatches].sort((a, b) => a.date.localeCompare(b.date))
   let maxStreak = 0, curStreak = 0
   sortedByDate.forEach(m => {
     if (isWin(m)) { curStreak++; if (curStreak > maxStreak) maxStreak = curStreak }
-    else curStreak = 0
+    else if (isLoss(m)) curStreak = 0
   })
 
   const surfaces = ['Kunstgras', 'Gravel', 'Smashcourt', 'Hardcourt binnen', 'Hardcourt buiten']
@@ -139,7 +148,7 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
              (team2.includes(player.id) && team1.includes(opp.id))
     })
     const w = h2h.filter(isWin).length
-    return { opp, played: h2h.length, wins: w, losses: h2h.length - w }
+    return { opp, played: h2h.length, wins: w, losses: h2h.filter(isLoss).length, noWinner: h2h.filter(m => m.winner_id == null).length }
   }).filter(h => h.played > 0).sort((a, b) => b.played - a.played)
 
   const allStats = players.map(p => {
@@ -150,7 +159,8 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
       const wt = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
       return inTeam1 ? wt === 'team1' : wt === 'team2'
     }).length
-    return { id: p.id, wins: pw, total: pm.length, pct: pm.length ? pw / pm.length : 0 }
+    const decided = pm.filter(m => m.winner_id != null).length
+    return { id: p.id, wins: pw, total: pm.length, pct: decided ? pw / decided : 0 }
   }).sort((a, b) => b.wins - a.wins || b.pct - a.pct)
   const rank = allStats.findIndex(s => s.id === player.id) + 1
 
@@ -454,6 +464,7 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
                 <div>
                   <div className="text-xl font-bold">{myMatches.length}</div>
                   <div className="text-xs text-gray-400">Totaal</div>
+                  {noWinnerCount > 0 && <div className="text-xs text-gray-400">{noWinnerCount} zonder winnaar</div>}
                 </div>
                 {maxStreak >= 3 && (
                   <div>
@@ -470,14 +481,14 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body py-3 px-4 text-center">
                 <div className="text-xs text-gray-400 mb-1">🎾 Enkelspel</div>
-                <div className="font-bold text-lg">{singlesWins}–{singlesMatches.length - singlesWins}</div>
+                <div className="font-bold text-lg">{singlesWins}–{singlesLosses}</div>
                 <div className="text-xs text-gray-400">{singlesMatches.length} wedstrijden</div>
               </div>
             </div>
             <div className="card bg-base-100 shadow-sm">
               <div className="card-body py-3 px-4 text-center">
                 <div className="text-xs text-gray-400 mb-1">🤝 Dubbelspel</div>
-                <div className="font-bold text-lg">{doublesWins}–{doublesMatches.length - doublesWins}</div>
+                <div className="font-bold text-lg">{doublesWins}–{doublesLosses}</div>
                 <div className="text-xs text-gray-400">{doublesMatches.length} wedstrijden</div>
               </div>
             </div>
@@ -490,7 +501,8 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
                 <h3 className="font-bold mb-3">🤝 Beste Dubbel Duo's</h3>
                 <div className="space-y-2">
                   {duoStats.map(d => {
-                    const pct = Math.round(d.wins / d.played * 100)
+                    const decided = d.wins + d.losses
+                    const pct = decided ? Math.round(d.wins / decided * 100) : 0
                     const color = d.wins > d.losses ? 'text-green-600' : d.wins < d.losses ? 'text-red-400' : 'text-yellow-500'
                     return (
                       <div key={d.partner.id} className="flex items-center gap-3">
@@ -544,6 +556,7 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
                 <div className="flex flex-wrap gap-2">
                   {last10.map(m => {
                     const win = isWin(m)
+                    const noWinner = m.winner_id == null
                     const opp = players.find(p => {
                       const team1 = [m.player1_id, m.team1_player2_id]
                       const team2 = [m.player2_id, m.team2_player2_id]
@@ -553,8 +566,8 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
                     })
                     return (
                       <div key={m.id} className="flex flex-col items-center gap-0.5">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow ${win ? 'bg-green-500' : 'bg-red-400'}`}>
-                          {win ? 'W' : 'V'}
+                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white font-bold text-sm shadow ${noWinner ? 'bg-gray-400' : win ? 'bg-green-500' : 'bg-red-400'}`}>
+                          {noWinner ? '–' : win ? 'W' : 'V'}
                         </div>
                         <div className="text-xs text-gray-400">{opp?.name.split(' ')[0] || '?'}</div>
                       </div>
@@ -572,7 +585,8 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
                 <h3 className="font-bold mb-3">⚔️ H2H Overzicht</h3>
                 <div className="space-y-2">
                   {h2hStats.map(h => {
-                    const pct = Math.round(h.wins / h.played * 100)
+                    const decided = h.wins + h.losses
+                    const pct = decided ? Math.round(h.wins / decided * 100) : 0
                     const color = h.wins > h.losses ? 'text-green-600' : h.wins < h.losses ? 'text-red-400' : 'text-yellow-500'
                     return (
                       <div key={h.opp.id} className="flex items-center gap-3">
@@ -580,7 +594,7 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
                           {getInitials(h.opp.name)}
                         </div>
                         <div className="flex-1 text-sm font-medium">{h.opp.name}</div>
-                        <div className={`font-bold text-sm ${color}`}>{h.wins}–{h.losses}</div>
+                        <div className={`font-bold text-sm ${color}`}>{h.wins}–{h.losses}{h.noWinner > 0 && <span className="block text-xs font-normal text-gray-400">{h.noWinner} zonder winnaar</span>}</div>
                         <div className="text-xs text-gray-400 w-8 text-right">{pct}%</div>
                       </div>
                     )
@@ -598,18 +612,19 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
                 <div className="space-y-2">
                   {[...myMatches].sort((a, b) => b.date.localeCompare(a.date)).map(m => {
                     const win = isWin(m)
+                    const noWinner = m.winner_id == null
                     const p1 = players.find(p => p.id === m.player1_id)?.name || '?'
                     const p2 = players.find(p => p.id === m.player2_id)?.name || '?'
                     const tp1 = m.team1_player2_id ? ` & ${players.find(p => p.id === m.team1_player2_id)?.name?.split(' ')[0] || '?'}` : ''
                     const tp2 = m.team2_player2_id ? ` & ${players.find(p => p.id === m.team2_player2_id)?.name?.split(' ')[0] || '?'}` : ''
                     const team1 = p1.split(' ')[0] + tp1
                     const team2 = p2.split(' ')[0] + tp2
-                    const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
+                    const winnerTeam = noWinner ? null : m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
                     const sets = parseSetScore(m.sets)
                     return (
-                      <div key={m.id} className={`flex items-center gap-3 py-2 px-3 rounded-lg border-l-4 ${win ? 'border-l-green-500 bg-green-50 dark:bg-green-900/10' : 'border-l-red-400 bg-red-50 dark:bg-red-900/10'}`}>
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${win ? 'bg-green-500' : 'bg-red-400'}`}>
-                          {win ? 'W' : 'V'}
+                      <div key={m.id} className={`flex items-center gap-3 py-2 px-3 rounded-lg border-l-4 ${noWinner ? 'border-l-gray-400 bg-gray-50 dark:bg-gray-900/10' : win ? 'border-l-green-500 bg-green-50 dark:bg-green-900/10' : 'border-l-red-400 bg-red-50 dark:bg-red-900/10'}`}>
+                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-xs font-bold flex-shrink-0 ${noWinner ? 'bg-gray-400' : win ? 'bg-green-500' : 'bg-red-400'}`}>
+                          {noWinner ? '–' : win ? 'W' : 'V'}
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="text-sm">
@@ -619,6 +634,7 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
                           </div>
                           <div className="text-xs text-gray-400 flex gap-2 flex-wrap">
                             <span>{formatDate(m.date)}</span>
+                            {noWinner && <span>Geen winnaar</span>}
                             {m.surface && <span className={`badge badge-xs ${SURFACE_COLORS[m.surface] || 'badge-neutral'}`}>{m.surface}</span>}
                             {m.location && <span>📍 {m.location}</span>}
                           </div>
