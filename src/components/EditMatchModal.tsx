@@ -3,6 +3,7 @@ import type { Match, Player } from '../types'
 import { SURFACES, SURFACE_COLORS } from '../types'
 
 interface Props {
+  sport?: 'tennis' | 'padel'
   match: Match
   players: Player[]
   onSave: (id: number, updates: Partial<Match>) => void
@@ -10,7 +11,7 @@ interface Props {
   onClose: () => void
 }
 
-export default function EditMatchModal({ match, players, onSave, onDelete, onClose }: Props) {
+export default function EditMatchModal({ sport = 'tennis', match, players, onSave, onDelete, onClose }: Props) {
   const parsedSets: number[][] = (() => { try { return JSON.parse(match.sets) } catch { return [[0,0]] } })()
   const [date, setDate] = useState(match.date)
   const [player1, setPlayer1] = useState(String(match.player1_id))
@@ -53,7 +54,7 @@ export default function EditMatchModal({ match, players, onSave, onDelete, onClo
       player2_id: p2id,
       winner_id: winner === 'team1' ? p1id : winner === 'team2' ? p2id : null,
       sets: JSON.stringify(setsData),
-      surface,
+      surface: sport === 'padel' ? '' : surface,
       location,
       team1_player2_id: match.match_type === 'doubles' ? (team1p2 ? parseInt(team1p2) : null) : null,
       team2_player2_id: match.match_type === 'doubles' ? (team2p2 ? parseInt(team2p2) : null) : null,
@@ -170,7 +171,7 @@ export default function EditMatchModal({ match, players, onSave, onDelete, onClo
             </button>
           </div>
         </div>
-        <div className="form-control mb-3">
+        {sport === 'tennis' && <div className="form-control mb-3">
           <label className="label"><span className="label-text font-semibold">Ondergrond</span></label>
           <div className="flex flex-wrap gap-2">
             {SURFACES.map(s => (
@@ -180,10 +181,10 @@ export default function EditMatchModal({ match, players, onSave, onDelete, onClo
               </button>
             ))}
           </div>
-        </div>
+        </div>}
         <div className="form-control mb-4">
           <label className="label"><span className="label-text font-semibold">Locatie</span></label>
-          <input type="text" className="input input-bordered" placeholder="bijv. E.T.V. de Helster" value={location} onChange={e => setLocation(e.target.value)} />
+          <input type="text" className="input input-bordered" placeholder={sport === 'padel' ? 'bijv. Padelclub' : 'bijv. E.T.V. de Helster'} value={location} onChange={e => setLocation(e.target.value)} />
         </div>
         <div className="form-control">
           <label className="label"><span className="label-text font-semibold">💬 Opmerking <span className="text-gray-400 font-normal">(optioneel)</span></span></label>

@@ -1,9 +1,12 @@
+export type Sport = 'tennis' | 'padel'
+
 export interface Player {
   id: number
   name: string
 }
 
 export interface Match {
+  sport?: Sport
   id: number
   date: string
   player1_id: number
@@ -20,6 +23,7 @@ export interface Match {
 }
 
 export interface Poule {
+  sport?: Sport
   id: number
   name: string
   created_at?: string

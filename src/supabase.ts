@@ -14,12 +14,13 @@ export async function upsertProfile(profile: Record<string, unknown>) {
   return supabase.from('tennis_player_profiles').upsert(profile, { onConflict: 'player_id' })
 }
 
-export async function fetchPoules(): Promise<Array<{id: number, name: string, created_at?: string, player_ids: number[]}>> {
+export async function fetchPoules(): Promise<Array<{id: number, name: string, created_at?: string, player_ids: number[], sport?: 'tennis' | 'padel'}>> {
   const [{ data: poules }, { data: members }] = await Promise.all([
     supabase.from('tennis_poules').select('*').order('created_at'),
     supabase.from('tennis_poule_members').select('poule_id, player_id')
   ])
-  return (poules || []).map((p: {id: number, name: string, created_at?: string}) => ({
+  return (poules || []).map((p: {id: number, name: string, created_at?: string, sport?: 'tennis' | 'padel'}) => ({
+    sport: p.sport,
     id: p.id,
     name: p.name,
     created_at: p.created_at,
@@ -37,8 +38,8 @@ export async function removePouleMember(poule_id: number, player_id: number) {
   return supabase.from('tennis_poule_members').delete().eq('poule_id', poule_id).eq('player_id', player_id)
 }
 
-export async function createPoule(name: string) {
-  return supabase.from('tennis_poules').insert({ name }).select().single()
+export async function createPoule(name: string, sport?: 'tennis' | 'padel') {
+  return supabase.from('tennis_poules').insert(sport ? { name, sport } : { name }).select().single()
 }
 
 export async function deletePoule(id: number) {

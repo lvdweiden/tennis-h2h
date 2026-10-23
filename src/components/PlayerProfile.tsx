@@ -45,6 +45,7 @@ function resizeImageToBase64(file: File, maxSize = 300): Promise<string> {
 }
 
 interface Props {
+  sport?: 'tennis' | 'padel'
   player: Player
   players: Player[]
   matches: Match[]
@@ -53,7 +54,7 @@ interface Props {
   onProfileSaved: (profile: PlayerProfile) => void
 }
 
-export default function PlayerProfile({ player, players, matches, profile, onBack, onProfileSaved }: Props) {
+export default function PlayerProfile({ sport = 'tennis', player, players, matches, profile, onBack, onProfileSaved }: Props) {
   // Edit state
   const [mode, setMode] = useState<'view' | 'pin' | 'edit'>('view')
   const [pinInput, setPinInput] = useState('')
@@ -126,7 +127,7 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
     else if (isLoss(m)) curStreak = 0
   })
 
-  const surfaces = ['Kunstgras', 'Gravel', 'Smashcourt', 'Hardcourt binnen', 'Hardcourt buiten']
+  const surfaces = sport === 'tennis' ? ['Kunstgras', 'Gravel', 'Smashcourt', 'Hardcourt binnen', 'Hardcourt buiten'] : []
   const surfaceStats = surfaces.map(s => {
     const sm = myMatches.filter(m => m.surface === s)
     const sw = sm.filter(isWin).length
@@ -521,6 +522,7 @@ export default function PlayerProfile({ player, players, matches, profile, onBac
             </div>
           )}
 
+          <p className="text-xs text-gray-500 mb-3">{sport === 'padel' ? '🏓 Alleen padelstatistieken · profielgegevens gedeeld met tennis' : '🎾 Alleen tennisstatistieken'}</p>
           {/* Ondergrond stats */}
           {surfaceStats.length > 0 && (
             <div className="card bg-base-100 shadow-sm mb-4">

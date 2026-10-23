@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import confetti from 'canvas-confetti'
 import { supabase, fetchProfiles, fetchPoules, createPoule, deletePoule, addPouleMember, removePouleMember } from './supabase'
-import type { Player, Match, PlayerProfile as TPlayerProfile, Poule } from './types'
+import type { Player, Match, PlayerProfile as TPlayerProfile, Poule, Sport } from './types'
 import { SURFACE_COLORS } from './types'
 import AddMatchModal from './components/AddMatchModal'
 import H2HView from './components/H2HView'
@@ -146,10 +146,19 @@ function StatsView({ players, matches, onSelectPlayer }: { players: Player[], ma
 }
 
 export default function App() {
+  const [sport, setSport] = useState<Sport>(() => localStorage.getItem('h2h_sport') === 'padel' ? 'padel' : 'tennis')
+  const changeSport = (next: Sport) => { localStorage.setItem('h2h_sport', next); setSport(next) }
+  return <SportApp key={sport} sport={sport} onSportChange={changeSport} />
+}
+
+function SportApp({ sport, onSportChange }: { sport: Sport, onSportChange: (sport: Sport) => void }) {
   useDarkMode()
   const [tab, setTab] = useState<Tab>('h2h')
   const [players, setPlayers] = useState<Player[]>([])
-  const [matches, setMatches] = useState<Match[]>([])
+  const [allMatches, setMatches] = useState<Match[]>([])
+  const matches = allMatches.filter(m => (m.sport || 'tennis') === sport)
+  const [sportReady, setSportReady] = useState(false)
+  const [loadError, setLoadError] = useState('')
   const [loading, setLoading] = useState(true)
   const [showAddMatch, setShowAddMatch] = useState(false)
   const [showManagePlayers, setShowManagePlayers] = useState(false)
@@ -161,10 +170,11 @@ export default function App() {
   const [pinError, setPinError] = useState(false)
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
   const [profiles, setProfiles] = useState<TPlayerProfile[]>([])
-  const [poules, setPoules] = useState<Poule[]>([])
+  const [allPoules, setPoules] = useState<Poule[]>([])
+  const poules = allPoules.filter(p => (p.sport || 'tennis') === sport)
   const [selectedPoule, setSelectedPoule] = useState<number | null>(null)
   const [showManagePoules, setShowManagePoules] = useState(false)
-  const [uitFilter, setUitFilter] = useState<{player: string, surface: string, type: string}>({player:'', surface:'', type:''})
+  const [uitFilter, setUitFilter] = useState<{player: string, surface: string, type: string, location: string}>({player:'', surface:'', type:'', location:''})
   const [newPouleName, setNewPouleName] = useState('')
   const [expandedPoule, setExpandedPoule] = useState<number | null>(null)
   const [deleteConfirm, setDeleteConfirm] = useState<{
@@ -173,14 +183,18 @@ export default function App() {
 
   const loadData = async () => {
     setLoading(true)
-    const [{ data: pData }, { data: mData }, prData, poulesData] = await Promise.all([
+    const [pResult, mResult, prData, poulesData, matchSchema, pouleSchema] = await Promise.all([
       supabase.from('tennis_players').select('*').order('name'),
       supabase.from('tennis_matches').select('*').order('date', { ascending: false }),
       fetchProfiles(),
-      fetchPoules()
+      fetchPoules(),
+      supabase.from('tennis_matches').select('sport').limit(0),
+      supabase.from('tennis_poules').select('sport').limit(0)
     ])
-    if (pData) setPlayers(pData)
-    if (mData) setMatches(mData)
+    setSportReady(!matchSchema.error && !pouleSchema.error)
+    setLoadError(pResult.error?.message || mResult.error?.message || '')
+    if (pResult.data) setPlayers(pResult.data)
+    if (mResult.data) setMatches(mResult.data)
     setProfiles(prData)
     setPoules(poulesData)
     setLoading(false)
@@ -189,8 +203,8 @@ export default function App() {
   const handleAddPoule = async () => {
     const name = newPouleName.trim()
     if (!name) return
-    const { data } = await createPoule(name)
-    if (data) setPoules(prev => [...prev, data])
+    const { data } = await createPoule(name, sportReady ? sport : undefined)
+    if (data) setPoules(prev => [...prev, { ...data, player_ids: [] }])
     setNewPouleName('')
   }
 
@@ -257,7 +271,9 @@ export default function App() {
   const filteredMatches = selectedPoule !== null
     ? matches.filter(m => {
         const ids = poules.find(po => po.id === selectedPoule)?.player_ids ?? []
-        return ids.includes(m.player1_id) && ids.includes(m.player2_id)
+        const team1 = [m.player1_id, m.team1_player2_id]
+        const team2 = [m.player2_id, m.team2_player2_id]
+        return team1.some(id => id != null && ids.includes(id)) && team2.some(id => id != null && ids.includes(id))
       })
     : matches
   const filteredPlayers = selectedPoule !== null
@@ -266,7 +282,8 @@ export default function App() {
 
   const handleAddMatch = async (matchData: Omit<Match, 'id'>) => {
     setSaving(true)
-    await supabase.from('tennis_matches').insert(matchData)
+    const { error } = await supabase.from('tennis_matches').insert({ ...matchData, ...(sportReady ? { sport } : {}) })
+    if (error) { setSaving(false); alert('Opslaan mislukt: ' + error.message); return }
     await loadData()
     setShowAddMatch(false)
     setSaving(false)
@@ -281,7 +298,8 @@ export default function App() {
 
   const handleEditMatch = async (id: number, updates: Partial<Match>) => {
     setSaving(true)
-    await supabase.from('tennis_matches').update(updates).eq('id', id)
+    const { error } = await supabase.from('tennis_matches').update(updates).eq('id', id)
+    if (error) { setSaving(false); alert('Bewerken mislukt: ' + error.message); throw error }
     await loadData()
     setSaving(false)
   }
@@ -308,7 +326,7 @@ export default function App() {
   }
 
   const handleDeletePlayer = (playerId: number, playerName: string) => {
-    const hasMatches = matches.some(m =>
+    const hasMatches = allMatches.some(m =>
       m.player1_id === playerId || m.player2_id === playerId ||
       m.team1_player2_id === playerId || m.team2_player2_id === playerId
     )
@@ -323,11 +341,11 @@ export default function App() {
         <div className="max-w-2xl mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-black tracking-tight">🎾 Tennis H2H</h1>
+              <h1 className="text-2xl font-black tracking-tight">{sport === 'tennis' ? '🎾 Tennis H2H' : '🏓 Padel H2H'}</h1>
               <p className="text-green-200 text-xs mt-0.5">Head to Head Tracker</p>
             </div>
             <div className="flex gap-2 items-center">
-              {isUnlocked ? (
+              {isUnlocked && (sport === 'tennis' || sportReady) ? (
                 <>
                   <button onClick={() => setShowManagePlayers(true)} className="btn btn-sm btn-outline text-white border-white hover:bg-white hover:text-green-800" title="Spelers beheren">
                     👥
@@ -352,11 +370,19 @@ export default function App() {
         </div>
       </div>
 
+      <div className="bg-green-900 px-4 pb-3">
+        <div className="max-w-2xl mx-auto flex gap-2" role="group" aria-label="Sport kiezen">
+          {(['tennis', 'padel'] as const).map(s => <button key={s} onClick={() => onSportChange(s)} aria-pressed={sport === s}
+            className={`btn btn-sm flex-1 ${sport === s ? '!bg-white !text-green-900 !border-white' : '!bg-transparent !text-white !border-green-500'}`}>
+            {s === 'tennis' ? '🎾 Tennis' : '🏓 Padel'}
+          </button>)}
+        </div>
+      </div>
       {/* Tabs */}
       <div className="bg-white border-b shadow-sm">
         <div className="max-w-2xl mx-auto px-4">
           <div className="flex">
-            {([['h2h','🎾 H2H'], ['matrix','📊 Matrix'], ['uitslagen','📋 Uitslagen'], ['varianten','🎮 Varianten']] as [Tab, string][]).map(([t, l]) => (
+            {([['h2h','🎾 H2H'], ['matrix','📊 Matrix'], ['uitslagen','📋 Uitslagen'], ['varianten','🎮 Varianten']] as [Tab, string][]).filter(([t]) => sport === 'tennis' || t !== 'varianten').map(([t, l]) => (
               <button key={t} onClick={() => setTab(t)}
                 className={`px-4 py-3 text-sm font-semibold border-b-2 transition-colors ${tab === t ? 'border-green-600 text-green-700' : 'border-transparent text-gray-600 hover:text-gray-900'}`}>
                 {l}
@@ -386,15 +412,24 @@ export default function App() {
 
       {/* Content */}
       <div className="max-w-2xl mx-auto px-4 py-6">
-        {loading ? (
+        {loadError ? <div role="alert" className="alert alert-error">Laden mislukt: {loadError}<button className="btn btn-sm" onClick={loadData}>Opnieuw</button></div> : loading ? (
           <div className="text-center py-20"><span className="loading loading-spinner loading-lg text-green-600"></span></div>
+        ) : sport === 'padel' && !sportReady ? (
+          <div className="card bg-base-100 shadow-md"><div className="card-body">
+            <h2 className="card-title">🏓 Padel eenmalig activeren</h2>
+            <p>De app is klaar. Voeg eerst de sportkolommen toe in Supabase. Bestaande wedstrijden en poules blijven tennis.</p>
+            <p>Voer het bestand <strong>supabase/padel.sql</strong> uit vanuit de GitHub-repository en klik daarna op opnieuw controleren.</p>
+            <a className="link text-green-700" href="https://github.com/lvdweiden/tennis-h2h/blob/main/supabase/padel.sql" target="_blank" rel="noreferrer">Open SQL-bestand</a>
+            <a className="link text-green-700" href="https://supabase.com/dashboard/project/jbmzupbvpoyifdyrgvvb/sql/new" target="_blank" rel="noreferrer">Open Supabase SQL-editor</a>
+            <button className="btn btn-primary mt-2" onClick={loadData}>Opnieuw controleren</button>
+          </div></div>
         ) : (
           <>
-            {tab === 'h2h' && <H2HView players={filteredPlayers} matches={filteredMatches} poules={poules} onEditMatch={handleEditMatch} onDeleteMatch={handleDeleteMatch} isUnlocked={isUnlocked} />}
+            {tab === 'h2h'  && <H2HView sport={sport} players={filteredPlayers} matches={filteredMatches} poules={poules} onEditMatch={handleEditMatch} onDeleteMatch={handleDeleteMatch} isUnlocked={isUnlocked} />}
             {tab === 'varianten' && <VariantenView players={players} isUnlocked={isUnlocked} onRequestUnlock={() => { setShowPinModal(true); setPinError(false); setPinInput('') }} />}
             {tab === 'matrix' && (
               selectedPlayer ? (
-                <PlayerProfile
+                <PlayerProfile sport={sport}
                   player={selectedPlayer}
                   players={players}
                   matches={matches}
@@ -429,17 +464,21 @@ export default function App() {
                     <option value="">Alle spelers</option>
                     {players.map(p => <option key={p.id} value={String(p.id)}>{p.name}</option>)}
                   </select>
-                  <select className="select select-bordered select-sm" value={uitFilter.surface} onChange={e => setUitFilter(f => ({...f, surface: e.target.value}))}>
+                  {sport === 'tennis' && <select className="select select-bordered select-sm" value={uitFilter.surface} onChange={e => setUitFilter(f => ({...f, surface: e.target.value}))}>
                     <option value="">Alle ondergronden</option>
                     {['Kunstgras','Gravel','Smashcourt','Hardcourt binnen','Hardcourt buiten'].map(s => <option key={s} value={s}>{s}</option>)}
-                  </select>
+                  </select>}
                   <select className="select select-bordered select-sm" value={uitFilter.type} onChange={e => setUitFilter(f => ({...f, type: e.target.value}))}>
                     <option value="">Enkel + Dubbel</option>
                     <option value="singles">Enkel</option>
                     <option value="doubles">Dubbel</option>
                   </select>
-                  {(uitFilter.player || uitFilter.surface || uitFilter.type) && (
-                    <button className="btn btn-xs btn-ghost" onClick={() => setUitFilter({player:'', surface:'', type:''})}>✕ Reset</button>
+                  {sport === 'padel' && <select className="select select-bordered select-sm" aria-label="Locatie filteren" value={uitFilter.location} onChange={e => setUitFilter(f => ({...f, location: e.target.value}))}>
+                    <option value="">Alle locaties</option>
+                    {[...new Set(matches.map(m => m.location).filter(Boolean))].sort().map(l => <option key={l} value={l}>{l}</option>)}
+                  </select>}
+                  {(uitFilter.player || uitFilter.surface || uitFilter.type || uitFilter.location) && (
+                    <button className="btn btn-xs btn-ghost" onClick={() => setUitFilter({player:'', surface:'', type:'', location:''})}>✕ Reset</button>
                   )}
                 </div>
                 {filteredMatches.filter(m => {
@@ -447,6 +486,7 @@ export default function App() {
                     const pid = Number(uitFilter.player)
                     if (![m.player1_id, m.player2_id, m.team1_player2_id, m.team2_player2_id].includes(pid)) return false
                   }
+                  if (uitFilter.location && m.location !== uitFilter.location) return false
                   if (uitFilter.surface && m.surface !== uitFilter.surface) return false
                   if (uitFilter.type && m.match_type !== uitFilter.type) return false
                   return true
@@ -456,6 +496,7 @@ export default function App() {
                     const pid = Number(uitFilter.player)
                     if (![m.player1_id, m.player2_id, m.team1_player2_id, m.team2_player2_id].includes(pid)) return false
                   }
+                  if (uitFilter.location && m.location !== uitFilter.location) return false
                   if (uitFilter.surface && m.surface !== uitFilter.surface) return false
                   if (uitFilter.type && m.match_type !== uitFilter.type) return false
                   return true
@@ -530,7 +571,7 @@ export default function App() {
 
       {/* Modals */}
       {showAddMatch && (
-        <AddMatchModal
+        <AddMatchModal sport={sport}
           players={players}
           onSave={handleAddMatch}
           onClose={() => setShowAddMatch(false)}
@@ -610,7 +651,7 @@ export default function App() {
               <p className="text-sm font-semibold text-gray-600 mb-2">Spelers</p>
               <div className="space-y-1 max-h-48 overflow-y-auto">
                 {players.map(p => {
-                  const hasMatches = matches.some(m =>
+                  const hasMatches = allMatches.some(m =>
                     m.player1_id === p.id || m.player2_id === p.id ||
                     m.team1_player2_id === p.id || m.team2_player2_id === p.id
                   )

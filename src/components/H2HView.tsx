@@ -7,6 +7,7 @@ const formatDate = (d: string) => { const [y,m,day] = d.split('-'); return `${da
 
 
 interface Props {
+  sport?: 'tennis' | 'padel'
   players: Player[]
   matches: Match[]
   poules: Poule[]
@@ -27,7 +28,7 @@ function parseSets(sets: string): number[][] {
 }
 
 
-export default function H2HView({ players, matches, poules, onEditMatch, onDeleteMatch, isUnlocked }: Props) {
+export default function H2HView({ sport = 'tennis', players, matches, poules, onEditMatch, onDeleteMatch, isUnlocked }: Props) {
   const [selectedP1, setSelectedP1] = useState<number | null>(null)
   const [selectedP1Partner, setSelectedP1Partner] = useState<number | null>(null)
   const [selectedP2, setSelectedP2] = useState<number | null>(null)
@@ -106,7 +107,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
   const singlesCount = relevantMatches.filter(m => m.match_type === 'singles').length
   const doublesCount = relevantMatches.filter(m => m.match_type === 'doubles').length
 
-  const surfaceStats = SURFACES.map(s => {
+  const surfaceStats = (sport === 'tennis' ? SURFACES : []).map(s => {
     const sm = filteredMatches.filter(m => m.surface === s)
     const sw = sm.filter(m => {
       if (m.winner_id == null) return false
@@ -130,16 +131,18 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
       return (team1.includes(id1) && team1.includes(id2)) || (team2.includes(id1) && team2.includes(id2))
     })
     const wins = pairMatches.filter(m => {
+      if (m.winner_id == null) return false
       const inTeam1 = [m.player1_id, m.team1_player2_id].includes(id1)
       const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
       return inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
     }).length
-    return { total: pairMatches.length, wins, losses: pairMatches.length - wins }
+    return { total: pairMatches.length, wins, losses: pairMatches.filter(m => m.winner_id != null).length - wins }
   }
 
   // Speler statistieken over ALLE wedstrijden (niet alleen H2H)
   function getPlayerStats(playerId: number) {
     function didWin(m: Match) {
+      if (m.winner_id == null) return false
       const inTeam1 = m.player1_id === playerId || m.team1_player2_id === playerId
       const winnerTeam = m.winner_id === m.player1_id || m.winner_id === m.team1_player2_id ? 'team1' : 'team2'
       return inTeam1 ? winnerTeam === 'team1' : winnerTeam === 'team2'
@@ -151,9 +154,12 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
     const singles = all.filter(m => m.match_type === 'singles')
     const doubles = all.filter(m => m.match_type === 'doubles')
     const sorted = [...all].sort((a, b) => b.date.localeCompare(a.date))
-    const last5 = sorted.slice(0, 5).map(m => didWin(m))
+    const last5 = sorted.slice(0, 5).map(m => m.winner_id == null ? null : didWin(m))
     return {
       total: all.length,
+      totalL: all.filter(m => m.winner_id != null && !didWin(m)).length,
+      singlesL: singles.filter(m => m.winner_id != null && !didWin(m)).length,
+      doublesL: doubles.filter(m => m.winner_id != null && !didWin(m)).length,
       totalW: all.filter(m => didWin(m)).length,
       singlesW: singles.filter(m => didWin(m)).length,
       singlesTotal: singles.length,
@@ -214,7 +220,7 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
   return (
     <div>
       {editingMatch && (
-        <EditMatchModal
+        <EditMatchModal sport={sport}
           match={editingMatch}
           players={players}
           onSave={(id, updates) => { onEditMatch(id, updates); setEditingMatch(null) }}
@@ -371,32 +377,32 @@ export default function H2HView({ players, matches, poules, onEditMatch, onDelet
             const rows = [
               {
                 label: 'TOTAAL W-V',
-                v1: <>{s1.totalW}-{s1.total - s1.totalW} <span className="text-gray-400 text-xs">({s1.total})</span></>,
-                v2: <>{s2.totalW}-{s2.total - s2.totalW} <span className="text-gray-400 text-xs">({s2.total})</span></>,
+                v1: <>{s1.totalW}-{s1.totalL} <span className="text-gray-400 text-xs">({s1.total})</span></>,
+                v2: <>{s2.totalW}-{s2.totalL} <span className="text-gray-400 text-xs">({s2.total})</span></>,
               },
               {
                 label: 'ENKEL W-V',
-                v1: <>{s1.singlesW}-{s1.singlesTotal - s1.singlesW} <span className="text-gray-400 text-xs">({s1.singlesTotal})</span></>,
-                v2: <>{s2.singlesW}-{s2.singlesTotal - s2.singlesW} <span className="text-gray-400 text-xs">({s2.singlesTotal})</span></>,
+                v1: <>{s1.singlesW}-{s1.singlesL} <span className="text-gray-400 text-xs">({s1.singlesTotal})</span></>,
+                v2: <>{s2.singlesW}-{s2.singlesL} <span className="text-gray-400 text-xs">({s2.singlesTotal})</span></>,
               },
               {
                 label: 'DUBBEL W-V',
-                v1: <>{s1.doublesW}-{s1.doublesTotal - s1.doublesW} <span className="text-gray-400 text-xs">({s1.doublesTotal})</span></>,
-                v2: <>{s2.doublesW}-{s2.doublesTotal - s2.doublesW} <span className="text-gray-400 text-xs">({s2.doublesTotal})</span></>,
+                v1: <>{s1.doublesW}-{s1.doublesL} <span className="text-gray-400 text-xs">({s1.doublesTotal})</span></>,
+                v2: <>{s2.doublesW}-{s2.doublesL} <span className="text-gray-400 text-xs">({s2.doublesTotal})</span></>,
               },
               {
                 label: 'VORM',
                 v1: (
                   <div className="flex flex-wrap gap-1 justify-end">
                     {s1.last5.map((w, i) => (
-                      <span key={i} className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white font-bold ${w ? 'bg-green-500' : 'bg-red-400'}`} style={{fontSize:'10px'}}>{w ? 'W' : 'V'}</span>
+                      <span key={i} className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white font-bold ${w === null ? 'bg-gray-400' : w ? 'bg-green-500' : 'bg-red-400'}`} style={{fontSize:'10px'}}>{w === null ? '–' : w ? 'W' : 'V'}</span>
                     ))}
                   </div>
                 ),
                 v2: (
                   <div className="flex flex-wrap gap-1 justify-start">
                     {s2.last5.map((w, i) => (
-                      <span key={i} className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white font-bold ${w ? 'bg-green-500' : 'bg-red-400'}`} style={{fontSize:'10px'}}>{w ? 'W' : 'V'}</span>
+                      <span key={i} className={`inline-flex items-center justify-center w-5 h-5 rounded-full text-white font-bold ${w === null ? 'bg-gray-400' : w ? 'bg-green-500' : 'bg-red-400'}`} style={{fontSize:'10px'}}>{w === null ? '–' : w ? 'W' : 'V'}</span>
                     ))}
                   </div>
                 ),

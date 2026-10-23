@@ -3,6 +3,7 @@ import type { Player } from '../types'
 import { SURFACES, SURFACE_COLORS } from '../types'
 
 interface Props {
+  sport?: 'tennis' | 'padel'
   players: Player[]
   onSave: (match: {
     date: string
@@ -21,8 +22,8 @@ interface Props {
   onClose: () => void
 }
 
-export default function AddMatchModal({ players, onSave, onClose }: Props) {
-  const [matchType, setMatchType] = useState<'singles' | 'doubles'>('singles')
+export default function AddMatchModal({ sport = 'tennis', players, onSave, onClose }: Props) {
+  const [matchType, setMatchType] = useState<'singles' | 'doubles'>(sport === 'padel' ? 'doubles' : 'singles')
   const [date, setDate] = useState(new Date().toISOString().split('T')[0])
   const [player1, setPlayer1] = useState('')
   const [player2, setPlayer2] = useState('')
@@ -45,6 +46,8 @@ export default function AddMatchModal({ players, onSave, onClose }: Props) {
   const handleSave = () => {
     if (!player1 || !player2 || !date) return
     if (matchType === 'doubles' && (!team1p2 || !team2p2)) return
+    const participantIds = matchType === 'doubles' ? [player1, player2, team1p2, team2p2] : [player1, player2]
+    if (new Set(participantIds).size !== participantIds.length) { alert('Kies voor elke plek een andere speler.'); return }
     const setsData = sets.map(s => {
       const p1g = parseInt(s.p1) || 0
       const p2g = parseInt(s.p2) || 0
@@ -66,7 +69,7 @@ export default function AddMatchModal({ players, onSave, onClose }: Props) {
       player2_id: p2id,
       winner_id: winnerId,
       sets: JSON.stringify(setsData),
-      surface,
+      surface: sport === 'padel' ? '' : surface,
       location,
       match_type: matchType,
       team1_player2_id: matchType === 'doubles' ? parseInt(team1p2) : null,
@@ -86,7 +89,7 @@ export default function AddMatchModal({ players, onSave, onClose }: Props) {
   return (
     <div className="modal modal-open">
       <div className="modal-box max-w-lg">
-        <h3 className="font-bold text-lg mb-4">⚾ Uitslag Toevoegen</h3>
+        <h3 className="font-bold text-lg mb-4">{sport === 'padel' ? '🏓 Padeluitslag toevoegen' : '⚾ Uitslag Toevoegen'}</h3>
         <div className="flex gap-2 mb-4">
           {(['singles', 'doubles'] as const).map(t => (
             <button key={t} onClick={() => setMatchType(t)}
@@ -180,7 +183,7 @@ export default function AddMatchModal({ players, onSave, onClose }: Props) {
             </button>
           </div>
         </div>
-        <div className="form-control mb-3">
+        {sport === 'tennis' && <div className="form-control mb-3">
           <label className="label"><span className="label-text font-semibold">Ondergrond</span></label>
           <div className="flex flex-wrap gap-2">
             {SURFACES.map(s => (
@@ -190,10 +193,10 @@ export default function AddMatchModal({ players, onSave, onClose }: Props) {
               </button>
             ))}
           </div>
-        </div>
+        </div>}
         <div className="form-control mb-4">
           <label className="label"><span className="label-text font-semibold">Locatie</span></label>
-          <input type="text" className="input input-bordered" placeholder="bijv. E.T.V. de Helster" value={location} onChange={e => setLocation(e.target.value)} />
+          <input type="text" className="input input-bordered" placeholder={sport === 'padel' ? 'bijv. Padelclub' : 'bijv. E.T.V. de Helster'} value={location} onChange={e => setLocation(e.target.value)} />
         </div>
         <div className="form-control">
           <label className="label"><span className="label-text font-semibold">💬 Opmerking <span className="text-gray-400 font-normal">(optioneel)</span></span></label>
